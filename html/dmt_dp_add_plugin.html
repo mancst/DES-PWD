@@ -1,0 +1,228 @@
+<script src="<?cs var:config.docpath?>resource/js/dmt.addplugin.js?v=45"></script>
+<script language="javascript" type="text/javascript">
+
+// dmt_dlg_machine_opr_plugin.html, dmt.addplugin.js 页面中有引用请勿改名
+var g_ddap_machlist = <?cs var:config.machine_list ?>;
+
+function ddapMultiOpr(optype)
+{
+	var sel_config = "";
+    var count = 0;
+	$("#ddap_add_plugin_on_<?cs var:config.plugin_id ?>").find("input:checked").filter("[name='dp_opr_plugins']").each(function(i){
+		var val = $(this).val();
+		sel_config += (i==0 ? val : ","+val);
+        count++;
+	});
+
+	if(sel_config == "")
+	{
+		alertMsg.info("请选择agent正常部署且当前为运行状态的机器");
+	    return false;
+	}
+
+    if(count > <?cs var:config.max_opr_multi_machines ?>)
+    {
+        alertMsg.info("批量操作每次不能超过 <?cs var:config.max_opr_multi_machines ?> 台机器");
+        return false;
+    }
+
+    var tip = '';
+    switch(optype) {
+        case 1:
+            break;
+        case 2:
+            tip = '确定要从机器：' + sel_config + ' 中移除插件 <?cs var:config.plugin_name ?> 吗？';
+            break;
+        case 3:
+            tip = '确定要在机器：' + sel_config + ' 中启用插件 <?cs var:config.plugin_name ?> 吗？';
+            break;
+        case 4:
+            tip = '确定要在机器：' + sel_config + ' 中禁用插件 <?cs var:config.plugin_name ?> 吗？';
+            break;
+        default:
+            dmtJsBugReport('dmt_dp_add_plugin.html', 'ddapMultiOpr', 'unknow operate type:' + optype);
+	        return false;
+    }
+
+    if(tip != '') {
+	    alertMsg.confirm(tip, {
+	    	okCall: function(){
+                ddapMachOprPlugin('<?cs var:config.cgipath?>', sel_config, <?cs var:config.plugin_id ?>, optype);
+	    	}
+	    });
+    }
+    else {
+        ddapMachOprPlugin('<?cs var:config.cgipath?>', sel_config, <?cs var:config.plugin_id ?>, optype);
+    }
+	return false;
+}
+
+$(document).ready(function(){
+    if(g_ddap_machlist.count > 0) {
+        var uhtml_on = '', uhtml_off = '';
+        var lt = g_ddap_machlist.list;
+        for(var i=0; i < lt.length; ++i) {
+            var uhtml = '';
+            uhtml += "<tr>";
+            uhtml += "<td>" + lt[i].id + "</td>";
+            uhtml += "<td>" + lt[i].name + "</td>";
+            uhtml += "<td>" + lt[i].ip + "</td>";
+
+            if(lt[i].run_os == 'All_os')
+                uhtml += "<td>跨平台</td>";
+            else
+                uhtml += "<td>" + lt[i].run_os + "</td>";
+            uhtml += "<td>" + lt[i].os_arc + "</td>";
+            uhtml += "<td>" + lt[i].libc_ver + "</td>";
+            uhtml += "<td>" + lt[i].libcpp_ver + "</td>";
+            if(lt[i].run_time > 0) 
+                uhtml += "<td>" + dmtGetHumanTime(lt[i].run_time) + "</td>";
+            else
+                uhtml += "<td><span class='xrk_show_txt_hs'>未部署或未启动</span></td>";
+
+            if(lt[i].plugin_ver == 'no') {
+                uhtml_off += uhtml;
+                if(lt[i].last_hello_time != "无")
+                    uhtml_off += "<td>" + lt[i].last_hello_time + "</td>";
+                else {
+                    uhtml_off += "<td><span class='xrk_show_txt_hs'>无</span></td>";
+                }
+
+                if(lt[i].run_time > 0 && ('<?cs var:config.plugin_run_os ?>' == 'All_os' 
+                    || lt[i].run_os == '<?cs var:config.plugin_run_os ?>' 
+                    || lt[i].run_os_type == '<?cs var:config.plugin_run_os ?>'))
+                {
+                    uhtml_off += "<td>";
+                    uhtml_off += "<a class='detail' href='#' title='需要监控 agent 能访问外网' onclick='return dmapAddPlugin(\"<?cs var:config.cgipath ?>\", ";
+                    uhtml_off += lt[i].id + ", <?cs var:config.plugin_id ?>, 0);'>外网部署</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                    uhtml_off += "<a class='detail' href='#' title='支持 agent 在内网隔离环境下部署插件' onclick='return dmapAddPlugin(\"<?cs var:config.cgipath ?>\", ";
+                    uhtml_off += lt[i].id + ", <?cs var:config.plugin_id ?>, 1);'>内网部署</a>";
+                    uhtml_off += "</td>";
+                }
+                else
+                    uhtml_off += "<td><span class='xrk_show_txt_hs'>不满足部署条件</span></td>";
+                uhtml_off += "</tr>";
+            }
+            else {
+                uhtml_on += uhtml;
+                if(lt[i].plugin_disable)
+                    uhtml_on += "<td><span class='xrk_show_txt_hs'>已禁用</span></td>";
+                else
+                    uhtml_on += "<td><span class='xrk_text_bl2'>已启用</span></td>";
+                uhtml_on += "<td>" + lt[i].plugin_ver + "</td>";
+                if(lt[i].run_time > 0)
+                    uhtml_on += "<td><input name='dp_opr_plugins' type='checkbox' value='" + lt[i].id + "'></td>";
+                else
+                    uhtml_on += "<td></td>";
+                uhtml_on += "</tr>";
+            }
+        }
+        $('#ddap_add_plugin_on_<?cs var:config.plugin_id ?>').html(uhtml_on);
+        $('#ddap_add_plugin_off_<?cs var:config.plugin_id ?>').html(uhtml_off);
+    }
+});
+</script>
+
+<div class="pageContent statusMachine" layoutH='0'>
+	<div class="pageFormContent">
+        <div>
+            <font class='note-text'>提示：</font>
+            <br />
+            <ul>
+                <li class='note-text' style='margin-left:30px'>插件一键部署需要机器上安装监控 agent, 且 agent 为启动状态能正常连接服务端。</li>
+                <li class='note-text' style='margin-left:30px'>如果 agent 获取系统信息不正确或者一键部署失败，请检查机器上是否支持 wget/awk/grep/sed/tar/strings 等命令。</li>
+                <li class='note-text' style='margin-left:30px'>插件一键部署过程可能<font color='red'>重启相关服务</font>，如：apache/mysql 等，请在熟悉部署过程后再在您的生产环境操作（建议先在容器或者虚拟机环境操作）。</li>
+                <li class='note-text' style='margin-left:30px'>插件一键部署支持<font color='red'>“外网部署”</font>和<font color='red'>“内网部署”</font>两种方式，如果 agent 能访问外网建议使用<font color='red'>外网部署</font>方式，如果是在内网隔离环境可用<font color='red'>内网部署</font>方式。</li>
+                <li class='note-text' style='margin-left:30px'>插件部署过程会在 agent 的 plugin_install_log 目录下生成部署日志，您可以通过该日志了解插件部署的相关细节或者查看插件部署失败的原因。</li>
+            </ul>
+
+        </div>
+        <br />
+
+        <h3>待部署插件信息</h3>
+		<table class='list' width='100%'> 
+            <thead>
+                <tr>
+                    <th align='left' >插件ID</th>
+                    <th align='left' >插件显示名</th>
+                    <th align='left' >插件部署名</th>
+                    <th align='left' >运行平台</th>
+                    <th align='left' >开发语言</th>
+                    <th align='left' >插件作者</th>
+                    <th align='left' >current version</th>
+                    <th align='left' >插件详情</th>
+                </tr>
+ 
+            </thead>
+            <tbody>
+			    <tr>
+				    <td><?cs var:config.plugin_id ?></td>
+				    <td><?cs var:config.plugin_show_name ?></td>
+				    <td><?cs var:config.plugin_name ?></td>
+                    <?cs if:config.plugin_run_os == "All_os" ?>
+    				<td>跨平台</td>
+                    <?cs else ?>
+    				<td><?cs var:config.plugin_run_os ?></td>
+                    <?cs /if ?>
+				    <td><?cs var:config.plugin_language ?></td>
+				    <td><?cs var:config.plugin_auth ?></td>
+				    <td><?cs var:config.plugin_last_version ?></td>
+				    <td><a class='detail' href='<?cs var:config.plugin_desc_url ?>' target='_blank'>详情</a></td>
+			    </tr>
+            </tbody>
+        </table>
+
+        <br />
+        <div class='searchBar' style='margin-bottom:2px; height:32px;'>
+            <h3 style='float:left'>已部署机器列表</h3>
+			<table style='float:right'><tr align='right'>
+                <td style='width:120px'><button class="buttonActive" onclick='return ddapMultiOpr(1);'><i class='icon-minus icon-large '></i>批量修改配置</button></td>
+                <td style='width:120px'><button class="buttonActive" onclick='return ddapMultiOpr(2);'><i class='icon-minus icon-large '></i>批量移除</button></td>
+                <td style='width:120px'><button class="buttonActive" onclick='return ddapMultiOpr(3);'><i class='icon-ok icon-large '></i>批量启用</button></td>
+                <td style='width:120px'><button class="buttonActive" onclick='return ddapMultiOpr(4);'><i class='icon-remove icon-large '></i>批量禁用</button></td>
+            </tr></table>
+        </div>
+        <table class='list' width='100%'>
+            <thead>
+                <tr>
+                    <th align='left' >机器ID</th>
+                    <th align='left' >机器名称</th>
+                    <th align='left' >机器IP</th>
+                    <th align='left' >系统平台</th>
+                    <th align='left' >体系结构</th>
+                    <th align='left' >libc版本</th>
+                    <th align='left' >libcpp版本</th>
+                    <th align='left' >监控agent 已运行</th>
+                    <th align='left' >插件状态</th>
+                    <th align='left' >已部署版本</th>
+                    <th align='left' ><input type="checkbox" group="dp_opr_plugins" class="checkboxCtrl"></th>
+                </tr>
+            </thead>
+            <tbody id='ddap_add_plugin_on_<?cs var:config.plugin_id ?>'>
+            </tbody>
+	    </table>
+
+        <br />
+        <h3>未部署机器列表</h3>
+        <table class='list' width='100%'>
+            <thead>
+                <tr>
+                    <th align='left' >机器ID</th>
+                    <th align='left' >机器名称</th>
+                    <th align='left' >机器IP</th>
+                    <th align='left' >系统平台</th>
+                    <th align='left' >体系结构</th>
+                    <th align='left' >libc版本</th>
+                    <th align='left' >libcpp版本</th>
+                    <th align='left' >agent 已运行</th>
+                    <th align='left' >最近心跳时间</th>
+                    <th align='left' >一键部署</th>
+                </tr>
+            </thead>
+            <tbody id='ddap_add_plugin_off_<?cs var:config.plugin_id ?>'>
+            </tbody>
+	    </table>
+	</div>
+</div>
+
+

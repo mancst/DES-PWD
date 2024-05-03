@@ -1,0 +1,222 @@
+<?cs if:config.notify_daemon ?>
+<script language="javascript" src="<?cs var:config.docpath?>js/dmt_DES-PWE.js"></script>
+<?cs /if ?>
+
+<?cs if:config.DES-PWE_debug==1 ?>
+<script src="<?cs var:config.docpath?>resource/js/dmt.comm.js?v=876" type="text/javascript"></script>
+<script src="<?cs var:config.docpath?>resource/js/jquery.js"></script>
+<script src="<?cs var:config.docpath?>resource/js/jquery.cookie.js"></script>
+<script src="<?cs var:config.docpath?>resource/js/jquery.validate.js"></script>
+<script src="<?cs var:config.docpath?>resource/js/jquery.bgiframe.js"></script>
+<script src="<?cs var:config.docpath?>resource/js/jquery.highlight-3.js"></script>
+<script src="<?cs var:config.docpath?>resource/js/jquery.easing.1.3.js?v=1"></script>
+<script src="<?cs var:config.docpath?>resource/js/jquery.json-2.3.js?v=1"></script>
+<script src="<?cs var:config.docpath?>resource/js/jquery.md5.js?v=1"></script>
+<script src="<?cs var:config.docpath?>resource/js/dwz.min.js?v=20200848"></script>
+<script src="<?cs var:config.docpath?>resource/js/dwz.regional.zh.js?v=7999"></script>
+<script src="<?cs var:config.docpath?>resource/js/echarts.min.js"></script>
+<script src="<?cs var:config.docpath?>resource/js/china.js"></script>
+<script src="<?cs var:config.docpath?>resource/js/dmt.addplugin.js?v=76"></script>
+<?cs else ?>
+<script src="<?cs var:config.docpath?>resource/js/dmt.comm.min.js?v=333322222" type="text/javascript"></script>
+<script src="<?cs var:config.docpath?>resource/js/jquery.min.js?v=2020506"></script>
+<script src="<?cs var:config.docpath?>resource/js/jquery.other.min.js?v=2020506"></script>
+<script src="<?cs var:config.docpath?>resource/js/dwz.all.min.js?v=22222836"></script>
+<script src="<?cs var:config.docpath?>resource/js/echarts.min.js?v=2020506"></script>
+<script src="<?cs var:config.docpath?>resource/js/china.min.js?v=2020506"></script>
+<script src="<?cs var:config.docpath?>resource/js/dmt.addplugin.js?v=76"></script>
+<?cs /if ?>
+
+<script type="text/javascript">
+
+var g_di_cspath = '<?cs var:config.cspath ?>';
+var g_di_docpath = '<?cs var:config.docpath ?>';
+var g_di_cgipath = '<?cs var:config.cgipath?>';
+var g_full_changed = false;
+var g_resp_version_info = null;
+var g_cur_version_info = '<?cs var:config.version_info ?>';
+
+window.onload = function() {
+    dmtAddEvent(document, "DOMMouseScroll", function() { $('#contextmenu').hide();}, false);
+    dmtAddEvent(document, "mousewheel", function() { $('#contextmenu').hide();}, false);
+};
+
+/* localStorage 浏览器兼容问题 fix */
+if (!window.localStorage) {
+  window.localStorage = {
+    getItem: function (sKey) {
+      if (!sKey || !this.hasOwnProperty(sKey)) { return null; }
+      return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" 
+		+ escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
+    },
+    key: function (nKeyId) {
+      return unescape(document.cookie.replace(/\s*\=(?:.(?!;))*$/, "").split(/\s*\=(?:[^;](?!;))*[^;]?;\s*/)[nKeyId]);
+    },
+    setItem: function (sKey, sValue) {
+      if(!sKey) { return; }
+      document.cookie = escape(sKey) + "=" + escape(sValue) + "; expires=Tue, 19 Jan 2038 03:14:07 GMT; path=/";
+      this.length = document.cookie.match(/\=/g).length;
+    },
+    length: 0,
+    removeItem: function (sKey) {
+      if (!sKey || !this.hasOwnProperty(sKey)) { return; }
+      document.cookie = escape(sKey) + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+      this.length--;
+    },
+    hasOwnProperty: function (sKey) {
+      return (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test(document.cookie);
+    }
+  };
+  window.localStorage.length = (document.cookie.match(/\=/g) || window.localStorage).length;
+}
+
+function djUserCenter()
+{
+    $('#dh_left_user').trigger('click');
+}
+
+function djOnReadyOk()
+{
+	// 主页相关逻辑
+	dcOnMainPage();
+	dcInitMainPage();
+    var showtype = window.localStorage.getItem('dmp_show_type');
+    if(showtype == 'sys')
+        dmpShowSysStatus();
+    else if(showtype == 'plugin')
+        dmpShowPluginStatus();
+    else 
+        dmpShowTopStatus();
+	setTimeout(function(){ $('#navMenuLast a').click(); }, 100);
+}
+
+function djCheckLoginType() 
+{ 
+	var support_var_css = false;
+	try {
+		document.documentElement.className = "js";
+		var supportsCssVars = function() { 
+			var e, t = document.createElement("style"); 
+			return t.innerHTML = "root: { --tmp-var: bold; }", 
+			   document.head.appendChild(t), e = !!(window.CSS && window.CSS.supports 
+				   && window.CSS.supports("font-weight", "var(--tmp-var)")), t.parentNode.removeChild(t), e
+		};
+		if(supportsCssVars())
+			support_var_css = true;
+	}catch(e) {
+	}
+
+	if(support_var_css)
+		return 'var_css';
+	return 'old'
+}
+
+function djLastGetVersionInfo()
+{
+    var requrl = "<?cs var:config.DES-PWE_url?>/cgi-bin/mt_slog_open?action=get_last_version";
+    requrl += "&bind_user=<?cs var:config.DES-PWE_account ?>";
+    requrl += "&cur_version=<?cs var:config.version_info ?>";
+	$.ajax({
+		type: 'get',
+		url : requrl,
+		dataType: 'json',
+		global: false,
+		success: function(resp_js) {
+			if(resp_js.ret == 0)
+               g_resp_version_info = resp_js; 
+		}
+	});
+}
+
+$(document).ready(function(){
+    djLastGetVersionInfo();
+
+	DWZ.init("<?cs var:config.docpath?>resource/dwz.frag.html?v=12", {
+		statusCode:{ok:200, error:300, timeout:301}, //【可选】
+		pageInfo:{pageNum:"pageNum", numPerPage:"numPerPage", orderField:"orderField", orderDirection:"orderDirection"}, //【可选】
+		debug:false,	// 调试模式 【true|false】
+		callback:function(){
+			initEnv();
+
+			// global info for javascript use
+			g_siteInfo = $.parseJSON('<?cs var:config.site_info ?>');
+			$("#themeList").theme({themeBase:"<?cs var:config.docpath?>resource/themes", defaultTheme:"toptry"});
+
+			$("#a_logout").click(function(){
+				var d = new Date();
+				var url = g_siteInfo.cgi_path+"slog_flogin?action=logout&v="+d.getTime()+'&login_show='+djCheckLoginType();
+				location.replace(url);
+				return false;
+			});
+
+			$("#a_relogin").click(function(){
+				var url = g_siteInfo.cgi_path+"slog_flogin?action=relogin&redirect_url=";
+				url += encodeURIComponent(window.location);
+				url += "&user_id=<?cs var:comm.user_id ?>";
+				location.replace(url);
+				return false;
+			});
+
+			if(<?cs var:config.check_lv2_vcode ?>+0 == 1) {
+				djLv2CheckPopDlg();
+				return ;
+			}
+
+			djOnReadyOk();
+
+			$('#dc_btn_main_full').click(function() { 
+				var f = dmtToggleFullScreen(document.documentElement);
+				if(f == 'error')
+					alertMsg.info('暂不支持您的浏览器进入全屏<br> (建议使用 Chrome 或者 Firefox 浏览器)');
+				else if(f == 'yes') {
+					$('#dc_btn_main_full').html("<i class='icon-resize-small icon-large' title='退出全屏'></i>");   
+					navTab._closeOtherTab();
+					setTimeout(function() {navTab.reload(); }, 1000);
+                    g_full_changed = true;
+				}
+				else {
+					$('#dc_btn_main_full').html("<i class='icon-resize-full icon-large' title='进入全屏'></i>");    
+					navTab._closeOtherTab();
+					setTimeout(function() {navTab.reload(); }, 1000);
+				}
+			});
+
+            $('#dj_about').click(function(){
+                var op = { mask:true, maxable:false, height:280, width:420, resizable:false, drawable:true };
+                $.pdialog.openLocal('df_dlg_show_about', 
+                    'df_dlg_show_about', '<img style="vertical-align:middle;margin-right:10px;" src="<?cs var:config.docpath?>/images/zifu_48.ico" />关于 DES-PWE', op);
+                if(g_resp_version_info != null && typeof g_resp_version_info.last_version != 'undefined') {
+                    if(typeof g_resp_version_info.last_version_link != 'undefined') {
+                        var hver = "<a style='font-size:14px;' href='" + g_resp_version_info.last_version_link 
+                        hver += "' target='_blank'>" + g_resp_version_info.last_version + "</a>";
+                        $('.about_new_version').html(hver);
+                    }
+                    else {
+                        $('.about_new_version').text(g_resp_version_info.last_version);
+                    }
+                }
+                else if(g_resp_version_info == null) {
+                    $('.about_new_version').html('<font color="red" style="font-size:14px;">未知（获取失败，请检查网络）</font>');
+                }
+
+                if(typeof g_resp_version_info.qq_group != 'undefined') {
+                    var hqq = "<a style='font-size:14px' target='_blank' href='" + g_resp_version_info.qq_group_link;
+                    hqq += "'>：" + g_resp_version_info.qq_group + "</a>";
+                }
+            });
+
+            $(window).resize(function() {
+                if(g_full_changed && !dmtCheckFull()) {
+                    $('#dc_btn_main_full').html("<i class='icon-resize-full icon-large' title='进入全屏'></i>");
+                    navTab._closeOtherTab();
+                    setTimeout(function() { navTab.reload(); }, 1000);
+                    g_full_changed = false;
+
+                }
+            });
+		}
+	});
+});
+
+</script>
+

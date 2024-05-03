@@ -1,0 +1,8 @@
+VER_MAJOR = 1
+VER_MINOR = 1.0
+INSTALL_INC = *.h
+SRCS = ./mt_attr.c ./mt_log.c ./mt_shared_hash.c ./mt_shm.c ./mt_vmem.c ./sv_cfg.c ./sv_coredump.c
+
+INCLS = ./mt_attr.h ./mt_log.h ./mt_report.h ./mt_shared_hash.h ./mt_shm.h ./mt_vmem.h ./sv_cfg.h ./sv_coredump.h
+
+INCLUDE =

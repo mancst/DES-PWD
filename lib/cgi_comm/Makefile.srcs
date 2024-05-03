@@ -1,0 +1,8 @@
+VER_MAJOR = 1
+VER_MINOR = 1.0
+INSTALL_INC = *.h
+SRCS = ./cgi_attr.cpp ./cgi_comm.cpp ./des.cpp
+
+INCLS = ./cgi_attr.h ./cgi_comm.h ./cgi_head.h ./des.h
+
+INCLUDE = -I/usr/include/mtagent_api_open -I/usr/include/my_proto -I/usr/include/Sockets -I/usr/include/cgi -I/usr/include/mtreport_api -I/usr/include/mysqlwrapped

@@ -1,0 +1,329 @@
+<style>
+.plugin_tables_text {
+    background-color:transparent; 
+    font-size:16px;
+    color:#7F7F7F; 
+    line-height:30px;
+}
+</style>
+
+<div class="navTab-panel tabsPageContent layoutBox xrk_chart_container" id='dp_plugin_tables_<?cs var:plugin.id ?>' layoutH='0'>
+	<div class="panelBar panelBar_single">
+		<ul class="toolBar">
+			<li style='float:left;padding-left:2px;'>
+				<label>选择上报机器</label>
+				<select class='xrk_combox' name="ds_pshow_table_sel_<?cs var:plugin.id ?>" onchange='dsPShowOnMachineChange_<?cs var:plugin.id ?>();' id="ds_pshow_table_sel_<?cs var:plugin.id ?>">
+                    <option value='0.0.0.0'>多机汇总</option>
+				</select>
+			</li>
+
+            <font class='plugin_tables_text' style='text-align:center'>
+                当前表格 - 上报机器：
+                <span class='xrk_text_bl2' id='dp_plugin_tables_sel_mach_<?cs var:plugin.id ?>'>暂无上报</span>
+                ，上报插件：
+                <span class='xrk_text_bl2'><?cs var:plugin.show_name ?></span>
+            </font>
+	
+			<li style='float:right;margin-right:5px;display:none' class='xrk_text_button' id='plugin_table_chart_<?cs var:plugin.id ?>'><a title='<?cs var:plugin.show_name ?>-图表' href="#" target="navTab" fresh="true" rel="<?cs var:plugin.rel ?>_<?cs var:plugin.id ?>"><i class='icon-bar-chart icon-large'></i>插件图表</a></li>
+
+            <li style='float:right;margin-right:5px' class='xrk_text_button'><a title='刷新表格' href="#" onclick='dpRefreshTables_<?cs var:plugin.id ?>();'><i class='icon-refresh icon-large'></i>刷新表格</a></li>
+		</ul>
+    </div>
+
+    <div style='width:100%' layoutH='0'>
+        <div id="ds_plugin_show_tables_<?cs var:plugin.id ?>" align='center' style="float:left; width:98%;">
+        </div>
+    </div>
+</div>
+
+<script language="javascript" type="text/javascript">
+
+var ds_plugin_table_<?cs var:plugin.id ?> = <?cs var:plugin.table_list ?>;
+var ds_plugin_table_datas_<?cs var:plugin.id ?> = null;
+
+function dsPShowOnMachineChange_<?cs var:plugin.id ?>()
+{
+    var selMach = $('#ds_pshow_table_sel_<?cs var:plugin.id ?>').val();
+    window.localStorage.setItem("local_pshow_table_sel_machine_<?cs var:plugin.id ?>", selMach);
+    if(selMach == '0.0.0.0')
+        $('#plugin_table_chart_<?cs var:plugin.id ?>').hide();
+    else {
+        $('#plugin_table_chart_<?cs var:plugin.id ?>').show();
+        $('#plugin_table_chart_<?cs var:plugin.id ?> a').attr('href', 
+            '<?cs var:config.cgipath?>mt_slog?action=<?cs var:plugin.show_action ?>&plugin_id=<?cs var:plugin.id ?>&machine=' 
+            + selMach);
+    }
+    dsPShowSetTableData_<?cs var:plugin.id ?>();
+}
+
+function dsPShowSetTableData_<?cs var:plugin.id ?>()
+{
+    var selMach = $('#ds_pshow_table_sel_<?cs var:plugin.id ?>').val();
+    if(selMach == '0.0.0.0')
+        $('#dp_plugin_tables_sel_mach_<?cs var:plugin.id ?>').text('多机汇总');
+    else
+        $('#dp_plugin_tables_sel_mach_<?cs var:plugin.id ?>').text(selMach);
+
+    var js = ds_plugin_table_datas_<?cs var:plugin.id ?>;
+    var tball = '', tb = '', tbtitle = '', tbtitle_end = '';
+    for(var i=0, j=0; i < js.tb_datas.length; i++) 
+    {
+        // 找到表格配置
+        for(j=0; j < ds_plugin_table_<?cs var:plugin.id ?>.length; j++) {
+            if(ds_plugin_table_<?cs var:plugin.id ?>[j].table_id == js.tb_datas[i].id)
+                break;
+        }
+        if(j >= ds_plugin_table_<?cs var:plugin.id ?>.length)
+            continue;
+        var tbinfo = ds_plugin_table_<?cs var:plugin.id ?>[j];
+        if(tbinfo.b_show_single_multi && selMach == '0.0.0.0')
+            continue;
+        
+        // 表格字段标题
+        tbtitle = '';
+        tbtitle += '<table width="98%" class="plugin_table list">';
+        tbtitle += '<thead>';
+        if(tbinfo.b_show_table_name)  {
+            if(tbinfo.b_show_multi_single && selMach == '0.0.0.0')
+                tbtitle += "<tr><th colspan='" + (tbinfo.t_field.length+3) + "' class='list_table_title' >" + tbinfo.table_name;
+            else
+                tbtitle += "<tr><th colspan='" + tbinfo.t_field.length + "' class='list_table_title' >" + tbinfo.table_name;
+        }
+
+        tb = "<tr>";
+        if(tbinfo.b_show_multi_single && selMach == '0.0.0.0') {
+            tb += "<th>上报机器</th>";
+            tb += "<th>上报时间</th>";
+            tb += "<th>统计时间</th>";
+        }
+
+        for(var f=0; f < tbinfo.t_field.length; f++) {
+            if(tbinfo.t_field[f].b_has_order) {
+                if(tbinfo.t_field[f].order_type == 1)
+                    tb += "<th class='desc xrk_sortable xrk_sortable_def'>" + tbinfo.t_field[f].field_name + "</th>";
+                else if(tbinfo.t_field[f].order_type == 2)
+                    tb += "<th class='asc xrk_sortable xrk_sortable_def'>" + tbinfo.t_field[f].field_name + "</th>";
+                else
+                    tb += "<th class='asc xrk_sortable'>" + tbinfo.t_field[f].field_name + "</th>";
+            }
+            else
+                tb += "<th>" + tbinfo.t_field[f].field_name + "</th>";
+        }
+        tb += "</tr>";
+        tb += '</thead>';
+
+        tb += '<tbody>';
+
+        // 设置表格记录
+        for(var f=0; f < js.tb_datas[i].records.length; f++) 
+        {
+            if(js.tb_datas[i].records[f].host != selMach && (selMach != '0.0.0.0' || !tbinfo.b_show_multi_single))
+                continue;
+
+            var frecords = js.tb_datas[i].records[f];
+            var tbtmp = '<tr>';
+            if(tbinfo.b_show_multi_single && selMach == '0.0.0.0') {
+                // 单机取一条的汇总数据
+                tbtmp += '<td><span class="xrk_text_bl2">' + frecords.host + '</span></td>';
+                tbtmp += '<td>' + frecords.report_time + '</td>';
+                tbtmp += '<td>' + frecords.static_time + '</td>';
+            }
+
+            var iValidRecords = 0;
+            for(var fv=0; fv < frecords.vals.length; fv++) {
+                var fvals = frecords.vals[fv].split('$');
+                var ij = 0;
+                for(ij = 0; ij < fvals.length; ij++) 
+                    fvals[ij] = fvals[ij].split('#');
+                for(ij=0, ijk=0; ij < tbinfo.t_field.length; ij++) {
+                    for(ijk=0; ijk < fvals.length; ijk++) {
+                        if(fvals[ijk][0] == tbinfo.t_field[ij].field_id)
+                            break;
+                    }
+                    if(ijk >= fvals.length) {
+                        if(tbinfo.t_field[ij].val_type >= 0 && tbinfo.t_field[ij].val_type <= 4)
+                            tbtmp += '<td src_val="0"></td>';
+                        else
+                            tbtmp += '<td></td>';
+                        continue;
+                    }
+
+                    if(tbinfo.t_field[ij].val_type >= 0 && tbinfo.t_field[ij].val_type <= 4) {
+                        if(tbinfo.t_field[ij].b_use_color && (fvals[ijk][1]).indexOf("fail") != -1) 
+                            tbtmp += '<td style="color:red; font-weight:bold;" src_val="' 
+                                + (fvals[ijk][1]).replace('(fail)', '') + '">';
+                        else
+                            tbtmp += '<td src_val="' + fvals[ijk][1] + '">';
+                    }
+                    else {
+                        if(tbinfo.t_field[ij].b_use_color && (fvals[ijk][1]).indexOf("fail") != -1) 
+                            tbtmp += '<td style="color:red; font-weight:bold;">';
+                        else 
+                            tbtmp += '<td>';
+                    }
+                    if(tbinfo.t_field[ij].val_type == 0)
+                        tbtmp += fvals[ijk][1];
+                    else if(tbinfo.t_field[ij].val_type == 1)
+                        tbtmp += fvals[ijk][1] + '%';
+                    else if(tbinfo.t_field[ij].val_type == 2) {
+                        var f = fvals[ijk][1]/100;
+                        tbtmp += f.toFixed(2);
+                    }
+                    else if(tbinfo.t_field[ij].val_type == 3)
+                        tbtmp += dmtGetHumanReadFixed2ByKB(fvals[ijk][1]);
+                    else if(tbinfo.t_field[ij].val_type == 4)
+                        tbtmp += dmtGetHumanReadFixed2(fvals[ijk][1]);
+                    else
+                        tbtmp += fvals[ijk][1];
+                    tbtmp += '</td>';
+                }
+                tbtmp += '</tr>';
+
+                // 单机取一条记录
+                if(tbinfo.b_show_multi_single) {
+                    tbtitle_end = '，统计时间间隔 - ' + frecords.static_time + ' 秒，数据上报时间 - ' + frecords.report_time;
+                    tbtitle_end += "</th></tr>";
+                    tb += tbtmp;
+                    break;
+                }
+                iValidRecords++;
+            }
+
+            // 单机取多条
+            if(iValidRecords > 0 && tbinfo.b_show_single_multi) {
+                tbtmp += '</tbody>';
+                tbtmp += '</table>';
+
+                tbtitle_end = '，统计时间间隔 - ' + frecords.static_time + ' 秒，数据上报时间 - ' + frecords.report_time;
+                tbtitle_end += "</th></tr>";
+                tball += tbtitle + tbtitle_end + tb + tbtmp;
+            }
+        }
+
+        // 单机取一条记录
+        if(tbinfo.b_show_multi_single) {
+            tb += '</tbody>';
+            tb += '</table>';
+            if(selMach == '0.0.0.0')  {
+                tbtitle_end = '<div style="width:84px;float:right;"><input type="checkbox" ';
+                tbtitle_end += ' class="xrk_plugin_table_show_main" table_id="' + tbinfo.table_id + '" ';
+                if(tbinfo.b_show_on_main)
+                    tbtitle_end += ' checked />首页展示</div>';
+                else
+                    tbtitle_end += ' />首页展示</div>';
+                tball += tbtitle + tbtitle_end + "</th></tr>" + tb; 
+            }
+            else {
+                tball += tbtitle + tbtitle_end + "</th></tr>" + tb; 
+            }
+        }
+    }
+
+    $('#ds_plugin_show_tables_<?cs var:plugin.id ?>').html(tball).initUI();
+    $('#ds_plugin_show_tables_<?cs var:plugin.id ?> .plugin_table').each(function() {
+        dmtSortTable($(this).find('th.xrk_sortable'));
+        $(this).find('th.xrk_sortable_def').trigger('click');
+    });
+
+    // 首页展示配置
+    $('#ds_plugin_show_tables_<?cs var:plugin.id ?> .xrk_plugin_table_show_main').click(function() {
+        var show_tables = [];
+        var cur_table = $(this).attr('table_id');
+        for(var j=0; j < ds_plugin_table_<?cs var:plugin.id ?>.length; j++) {
+            if(ds_plugin_table_<?cs var:plugin.id ?>[j].table_id == cur_table) { 
+                ds_plugin_table_<?cs var:plugin.id ?>[j].b_show_on_main 
+                    = !ds_plugin_table_<?cs var:plugin.id ?>[j].b_show_on_main; 
+                break;
+            }
+        }
+
+        $('#ds_plugin_show_tables_<?cs var:plugin.id ?> .xrk_plugin_table_show_main').each(function() {
+            if($(this).is(':checked')) 
+                show_tables.push($(this).attr('table_id'));
+        });
+        dmtSetPluginShowMainTable('<?cs var:plugin.log_server_ip ?>', <?cs var:plugin.log_server_port ?>, 
+            <?cs var:plugin.id ?>, show_tables, function(js) {
+                if(js == null || typeof js.ret == 'undefined' || js.ret != 0) {
+                    alertMsg.warn("插件首页展示表格配置保存失败!");
+                }
+        });
+    });
+}
+
+function dpRefreshTables_<?cs var:plugin.id ?>(js)
+{
+    var url = '<?cs var:config.cgipath ?>mt_slog?action=plugin_show_tables&plugin=<?cs var:plugin.id ?>&machine=';
+    url += $('#ds_pshow_table_sel_<?cs var:plugin.id ?>').val();
+    return navTab.reload(url);
+}
+
+function dpShowPluginTables_<?cs var:plugin.id ?>(js)
+{
+    if(js == null || js.ret != 0) {
+        alertMsg.warn("插件表格数据获取失败");
+        return;
+    }
+
+    if(typeof js.tb_datas == 'undefined')
+        return;
+
+    // 生成数据的机器来源
+    var machs = [];
+    for(var i=0, j=0; i < js.tb_datas.length; i++) 
+    {
+        // 找表格配置
+        for(j=0; j < ds_plugin_table_<?cs var:plugin.id ?>.length; j++) {
+            if(ds_plugin_table_<?cs var:plugin.id ?>[j].table_id == js.tb_datas[i].id)
+                break;
+        }
+        if(j >= ds_plugin_table_<?cs var:plugin.id ?>.length) {
+            dmtJsBugReport('index_table.html', 'dpShowPluginTables', 'bug: not find table:' + js.tb_datas[i].id);
+            continue;
+        }
+
+        for(var k=0, kk=0; k < js.tb_datas[i].records.length; k++) {
+            for(kk=0; kk < machs.length; kk++) {
+                if(machs[kk] == js.tb_datas[i].records[k].host)
+                    break;
+            }
+            if(kk >= machs.length)
+                machs.push(js.tb_datas[i].records[k].host);
+        }
+    }
+
+    var first = '0.0.0.0';
+    var his = window.localStorage.getItem("local_pshow_table_sel_machine_<?cs var:plugin.id ?>");
+    if(his != null && his != '')
+        first = his;
+    var set_init_mach = '<?cs var:config.init_show_machine ?>';
+    if(set_init_mach != '')
+        first = set_init_mach;
+
+    for(var kk=0; kk < machs.length; kk++) {
+        var op = $('<option></option>');
+        op.val(machs[kk]).text(machs[kk]);
+        $('#ds_pshow_table_sel_<?cs var:plugin.id ?>').append(op);
+    }
+    $('#ds_pshow_table_sel_<?cs var:plugin.id ?>').val(first);
+    if(first == '0.0.0.0')
+        $('#plugin_table_chart_<?cs var:plugin.id ?>').hide();
+    else {
+        $('#plugin_table_chart_<?cs var:plugin.id ?>').show();
+        $('#plugin_table_chart_<?cs var:plugin.id ?> a').attr('href', 
+            '<?cs var:config.cgipath?>mt_slog?action=<?cs var:plugin.show_action ?>&plugin_id=<?cs var:plugin.id ?>&machine=' 
+            + first);
+    }
+
+    ds_plugin_table_datas_<?cs var:plugin.id ?> = js;
+    dsPShowSetTableData_<?cs var:plugin.id ?>();
+}
+
+$(document).ready(function(){
+    // 向插件应用所在的日志服务器发起请求以查询实时表格数据
+    dmtGetPluginTablesInfo('<?cs var:plugin.log_server_ip ?>', <?cs var:plugin.log_server_port ?>, 
+        <?cs var:plugin.id ?>, dpShowPluginTables_<?cs var:plugin.id ?>);
+    setTimeout(function() { $('#dp_plugin_tables_<?cs var:plugin.id ?>').css('overflow', 'hidden'); }, 20);
+});
+
+</script>
+

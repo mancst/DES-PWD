@@ -1,0 +1,8 @@
+VER_MAJOR = 1
+VER_MINOR = 1.0
+INSTALL_INC = *.h
+SRCS = ./Memcache.cpp ./aes.cpp ./basic_packet.cpp ./md5.cpp ./oi_bmh.cpp ./supper_log.cpp ./sv_coredump.cpp ./sv_file.cpp ./sv_freq_ctrl.cpp ./sv_log.cpp ./sv_net.cpp ./sv_shm.cpp ./sv_str.cpp ./sv_struct.cpp ./sv_time.cpp ./sv_vmem.cpp ./tconv_g2u.cpp ./mtreport_cfg.cpp
+
+INCLS = ./FloginSession.h ./Memcache.h ./aes.h ./basic_packet.h ./md5.h ./oi_bmh.h ./supper_log.h ./sv_coredump.h ./sv_file.h ./sv_freq_ctrl.h ./sv_log.h ./sv_net.h ./sv_shm.h ./sv_str.h ./sv_struct.h ./sv_time.h ./sv_vmem.h ./tconv_g2u.h ./mtreport_cfg.h
+
+INCLUDE = -I/usr/include/Sockets -I/usr/include/my_proto -I/usr/include/mtreport_api -I/usr/include/mysqlwrapped

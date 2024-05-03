@@ -1,0 +1,21 @@
+Copyright &copy; 2019-2020 itc云框架. &nbsp; 
+<a style='text-decoration:underline;' href='http://beian.miit.gov.cn' target='_blank'>粤ICP备19024085号-1.</a>&nbsp; 
+<a style='text-decoration:underline;' href='#' id='dj_about'>关于 DES-PWE</a> . (推荐使用 Chrome 浏览器)
+<ul class="themeList" id="themeList" style='display:none'>
+    <li theme="toptry"><div></div></li>
+</ul>
+
+<div id='df_dlg_show_about' style='display:none'>
+    <div align='center' style='height:280px'>
+        <br /><font style='font-size:14px;'>AAD-PSC 基于服务的应用程序云框架系统</font>
+        <br /><font style='font-size:14px;'>高性能云框架系统，</font>
+        <br /><font style='font-size:14px;'></font>
+        <br /><font style='font-size:14px;'></font>
+        <br /><font style='font-size:14px;'>current version：<?cs var:config.version_info ?></font>
+        <br /><font style='font-size:14px;'></font>
+        <br /><font style='font-size:14px;'></font>
+        <br /><font style='font-size:14px;' class='about_qq_group'><a style='font-size:14px' target="_blank" href="https://qm.qq.com/cgi-bin/qm/qr?k=QmGaFsgl2jyjorlgkpEJGrsFDsixNrD6&amp;jump_from=webapi"></a></font>
+        <br />
+    </div>
+</div>
+

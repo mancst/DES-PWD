@@ -1,0 +1,209 @@
+<script src="<?cs var:config.docpath?>resource/js/dmt.addplugin.js?v=45"></script>
+<script language="javascript" type="text/javascript">
+
+function dmapMultiOpr(optype)
+{
+	var sel_plugin = "";
+    var count = 0;
+	$("#dmap_machine_plugin_on_<?cs var:config.machine_id ?>").find("input:checked").filter("[name='opr_plugins']").each(function(i){
+		var val = $(this).val();
+		sel_plugin += (i==0 ? val : ","+val);
+        count++;
+	});
+
+	if(sel_plugin == "")
+	{
+		alertMsg.info("请选择机器已部署插件");
+	    return false;
+	}
+
+    if(count > <?cs var:config.max_opr_multi_plugins ?>)
+    {
+        alertMsg.info("批量操作每次不能超过 <?cs var:config.max_opr_multi_plugins ?> 个插件");
+        return false;
+    }
+ 
+    var tip = '';
+    switch(optype) {
+        case 2:
+            tip = '确定要移除插件: '+ sel_plugin + ' 吗？';
+            break;
+        case 3:
+            tip = '确定要启用插件: '+ sel_plugin + ' 吗？';
+            break;
+        case 4:
+            tip = '确定要禁用插件: '+ sel_plugin + ' 吗？';
+            break;
+        default:
+            dmtJsBugReport('dmt_machine_add_plugin.html', 'dmapMultiOpr', 'unknow operate type:' + optype);
+	        return false;
+    }
+
+    if(tip != '') {
+	    alertMsg.confirm(tip, {
+	    	okCall: function(){
+                dmapMachOprPlugin('<?cs var:config.cgipath?>', <?cs var:config.machine_id ?>, sel_plugin, optype);
+	    	}
+	    });
+    }
+    else {
+        dmapMachOprPlugin('<?cs var:config.cgipath?>', <?cs var:config.machine_id ?>, sel_plugin, optype);
+    }
+	return false;
+}
+
+
+$(document).ready(function(){
+    var machine_plugins = $.parseJSON('<?cs var:config.machine_plugins ?>');
+    if(machine_plugins.count > 0) {
+        var uhtml_on = '', uhtml_off = '';
+        var lt = machine_plugins.plugins;
+        for(var i=0; i < lt.length; ++i) {
+            var uhtml = '';
+            uhtml += "<tr>";
+            uhtml += "<td>" + lt[i].id + "</td>";
+            uhtml += "<td>" + lt[i].show_name + "</td>";
+            uhtml += "<td>" + lt[i].name + "</td>";
+            if(lt[i].run_os == 'All_os')
+                uhtml += "<td>跨平台</td>";
+            else
+                uhtml += "<td>" + lt[i].run_os + "</td>";
+            uhtml += "<td>" + lt[i].language + "</td>";
+            uhtml += "<td>" + lt[i].auth + "</td>";
+            uhtml += "<td>" + lt[i].last_version + "</td>";
+
+            if(lt[i].installed == 1) {
+                uhtml_on += uhtml;
+                if(lt[i].plugin_disable)
+                    uhtml_on += "<td><span class='xrk_show_txt_hs'>已禁用</span></td>";
+                else
+                    uhtml_on += "<td><span class='xrk_text_bl'>已启用</span></td>";
+		        uhtml_on += "<td pid='" + lt[i].id + "'>";
+                uhtml_on += "  <a class='detail' href='#' onclick='return dmapModMachPlugin(\"<?cs var:config.cgi_path ?>\", ";
+                uhtml_on += " <?cs var:config.machine_id ?>, " + lt[i].id + ");'>修改配置</a>";
+                uhtml_on += "</td>";
+                uhtml_on += "<td><input name='opr_plugins' type='checkbox' value='" + lt[i].id + "'></td>";;
+                uhtml_on += "</tr>";
+            }
+            else {
+                uhtml_off += uhtml;
+    		    uhtml_off += "<td><a class='detail' href='" + lt[i].desc_url + "' target='_blank'>详情</a></td>";
+                uhtml_off += "<td>";
+                uhtml_off += "<a class='detail' href='#' title='需要监控 agent 能访问外网' onclick='return dmapAddPlugin(\"<?cs var:config.cgipath ?>\", ";
+                uhtml_off += "<?cs var:config.machine_id ?>, "+ lt[i].id + ", 0);'>外网部署</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                uhtml_off += "<a href='#' class='detail' title='支持 agent 在内网隔离环境下部署插件' onclick='return dmapAddPlugin(\"<?cs var:config.cgipath ?>\", ";
+                uhtml_off += "<?cs var:config.machine_id ?>, "+ lt[i].id + ", 1);'>内网部署</a>";
+                uhtml_off += "</td>";
+                uhtml_off += "</tr>";
+            }
+        }
+        $('#dmap_machine_plugin_on_<?cs var:config.machine_id ?>').html(uhtml_on);
+        $('#dmap_machine_plugin_off_<?cs var:config.machine_id ?>').html(uhtml_off);
+    }
+
+    <?cs if:config.run_time > 0 ?>
+        $('#dmap_mach_run_<?cs var:config.machine_id ?>').html(dmtGetHumanTime(<?cs var:config.run_time ?>));
+    <?cs else ?>
+        $('#dmap_mach_run_<?cs var:config.machine_id ?>').html("<span class='xrk_show_txt_hs'>已停止</span></td>");
+    <?cs /if ?>
+});
+
+</script>
+
+<div class="pageContent statusMachine" layoutH='0'>
+	<div class="pageFormContent">
+        <div>
+            <font class='note-text'>提示：</font>
+            <br />
+            <ul>
+                <li class='note-text' style='margin-left:30px'>要部署插件请先在插件市场<font color='red'>安装插件</font>，一键部署需要机器上<font color='red'>安装监控 agent</font>，且agent 为启动状态能正常连接服务端。</li>
+                <li class='note-text' style='margin-left:30px'>如果 agent 获取系统信息不正确或者一键部署失败，请检查机器上是否支持 wget/awk/grep/sed/tar/strings 等命令。</li>
+                <li class='note-text' style='margin-left:30px'>插件一键部署过程可能<font color='red'>重启相关服务</font>，如：apache/mysql 等，请在熟悉部署过程后再在您的生产环境操作（建议先在容器或者虚拟机环境操作）。</li>
+                <li class='note-text' style='margin-left:30px'>插件一键部署支持<font color='red'>“外网部署”</font>和<font color='red'>“内网部署”</font>两种方式，如果 agent 能访问外网建议使用<font color='red'>外网部署</font>方式，如果是在内网隔离环境可用<font color='red'>内网部署</font>方式。</li>
+                <li class='note-text' style='margin-left:30px'>插件部署过程会在 agent 的 plugin_install_log 目录下生成部署日志，您可以通过该日志了解插件部署的相关细节或者查看插件部署失败的原因。</li>
+            </ul>
+        </div>
+        <br />
+ 
+        <h3>待部署机器信息</h3>
+		<table class='list' width='100%'> 
+            <thead>
+                <tr>
+                    <th align='left' >机器ID</th>
+                    <th align='left' >机器名称</th>
+                    <th align='left' >机器IP</th>
+                    <th align='left' >系统平台</th>
+                    <th align='left' >体系结构</th>
+                    <th align='left' >libc版本</th>
+                    <th align='left' >libcpp版本</th>
+                    <th align='left' >agent 已运行</th>
+                    <th align='left' >agent 最近心跳时间</th>
+                </tr>
+            </thead>
+            <tbody>
+			    <tr>
+				    <td><?cs var:config.machine_id ?></td>
+				    <td><?cs var:config.machine_name ?></td>
+				    <td><?cs var:config.machine_ip ?></td>
+				    <td><?cs var:config.run_os ?></td>
+				    <td><?cs var:config.os_arc ?></td>
+				    <td><?cs var:config.libc_ver ?></td>
+				    <td><?cs var:config.libcpp_ver ?></td>
+                    <td id='dmap_mach_run_<?cs var:config.machine_id ?>'></td>
+				    <td><?cs var:config.last_hello_time ?></td>
+			    </tr>
+            </tbody>
+        </table>
+
+        <br />
+        <div class='searchBar' style='margin-bottom:2px; height:32px;'>
+            <h3 style='float:left'>已部署插件</h3>
+			<table style='float:right'><tr align='right'>
+                <td style='width:120px'><button class="buttonActive" onclick='return dmapMultiOpr(2);'><i class='icon-minus icon-large '></i>批量移除</button></td>
+                <td style='width:120px'><button class="buttonActive" onclick='return dmapMultiOpr(3);'><i class='icon-ok icon-large '></i>批量启用</button></td>
+                <td style='width:120px'><button class="buttonActive" onclick='return dmapMultiOpr(4);'><i class='icon-remove icon-large '></i>批量禁用</button></td>
+            </tr></table>
+        </div>
+        <table class='list' width='100%'>
+            <thead>
+                <tr>
+                    <th align='left' >插件ID</th>
+                    <th align='left' >插件显示名</th>
+                    <th align='left' >插件部署名</th>
+                    <th align='left' >运行平台</th>
+                    <th align='left' >开发语言</th>
+                    <th align='left' >插件作者</th>
+                    <th align='left' >current version</th>
+                    <th align='left' >插件状态</th>
+                    <th align='left' >操作</th>
+                    <th align='left' ><input type="checkbox" group="opr_plugins" class="checkboxCtrl"></th>
+                </tr>
+            </thead>
+            <tbody id='dmap_machine_plugin_on_<?cs var:config.machine_id ?>'>
+            </tbody>
+	    </table>
+
+        <br />
+        <h3>可部署插件</h3>
+        <table class='list' width='100%'>
+            <thead>
+                <tr>
+                    <th align='left' >插件ID</th>
+                    <th align='left' >插件显示名</th>
+                    <th align='left' >插件部署名</th>
+                    <th align='left' >运行平台</th>
+                    <th align='left' >开发语言</th>
+                    <th align='left' >插件作者</th>
+                    <th align='left' >current version</th>
+                    <th align='left' >插件详情</th>
+                    <th align='left' >插件部署</th>
+                </tr>
+            </thead>
+            <tbody id='dmap_machine_plugin_off_<?cs var:config.machine_id ?>'>
+            </tbody>
+	    </table>
+	
+	</div>
+</div>
+
+

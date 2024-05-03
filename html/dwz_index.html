@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<?cs if:config.notify_daemon ?>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e32865ae1d857a7d7d165f1d282e96f8";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<?cs /if ?>
+
+<script src='/DES-PWE_plugin/dmt_DES-PWE.js?v=111'></script>
+<?cs include:config.cspath+"main_meta.html" ?>
+<link href="<?cs var:config.docpath?>resource/font-awesome/css/font-awesome.min.css?v=66" rel="stylesheet"/>
+<link href="<?cs var:config.docpath?>resource/themes/css/core.css?v=699" rel="stylesheet" media="screen"/>
+<link href="<?cs var:config.docpath?>resource/themes/css/print.css?v=665" rel="stylesheet" media="screen"/>
+<!--[if lte IE 9]>
+    <link href="<?cs var:config.docpath?>resource/themes/css/ieHack.css" rel="stylesheet" media="screen"/>
+    <script src="<?cs var:config.docpath?>resource/js/html5shiv.min.js"></script>
+    <script src="<?cs var:config.docpath?>resource/js/respond.min.js"></script>
+<![endif]-->
+</head>
+
+<body scroll="no">
+	<header>
+		<?cs include:config.cspath+"dwz_header.html" ?>
+	</header>
+	<main>
+		<?cs include:config.cspath+"dwz_container.html" ?>
+	</main>
+	<footer>
+		<?cs include:config.cspath+"dwz_foot.html" ?>
+	</footer>
+	<?cs include:config.cspath+"dwz_js.html" ?>
+</body>
+</html>
+

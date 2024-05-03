@@ -1,0 +1,807 @@
+<style>
+#floatbtn {
+  width: 50px;
+  height: auto;
+  position: fixed;
+  top: 70%;
+  right: 18px;
+  left: auto;
+  z-index: 80;
+}
+#floatbtn a {
+  position: relative;
+  z-index: 90;
+  display: block;
+  margin-top: 4px;
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  font-size: 16px;
+  color: #3a8ff8;
+  background-color: transparent;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+</style>
+
+<div class="pageHeader" style='padding:0px 0px; height:42px;'>
+    <div class="searchBar">
+        <ul class="searchContent accountInfo">
+			<li style='margin-left:10px; float:left; font-size:16px; font-weight:400; color:red; width:600px; overflow:hidden;'> 
+				<?cs if:config.notify_daemon ?>
+				<span id='dcNotifyMsg' style="font-weight:400; font-size:16px; color:red;"></span>
+				<?cs else ?>
+				<marquee onMouseOut='start();' onMouseOver='stop();' style='font-size:16px; font-weight:400;' scrollamount="2" align='middle' id='dcNotifyMsg' loop=-1 behavior="alternate" style='text-decoration:underline;'></marquee>
+				<?cs /if ?>
+			</li>
+		</ul>
+		<div class='subBar' style='top:6px;'>
+			<ul>
+				<li><button type='button' class='buttonActive' id="dc_btn_hidden_tip" style='display:none'>不再显示当前消息</button></li>
+				<li><button type="button" class='buttonActive' id="dc_btn_refresh"><i class='icon-refresh icon-large'></i>刷新</button></li>
+			</ul>
+        </div>
+    </div>
+</div>
+
+<div class="pageContent xrk_chart_container" layoutH="28">
+    <div id='floatbtn'>
+        <a href='#' title='系统实时拓扑图' onclick='dmpShowTopStatus();'><i class='icon-connectdevelop icon-2x'></i></a>
+        <a href='#' title='迁移云管系统概况' onclick='dmpShowSysStatus();'><i class='icon-braille icon-2x'></i></a>
+        <a href='#' title='插件实时表格' onclick='dmpShowPluginStatus();'><i class='icon-plug icon-2x'></i></a>
+    </div>
+
+    <div id='dmpTopStatus'> 
+    </div>
+
+    <div id='dmpSysStatus' style='display:none;'>
+	    <div id='mainResUseStatus' style='width:600px; height:400px; margin:10px 20px; float:left;overflow:auto;'>
+	    	<div align='center'>
+	    		<font style='color:#fff; margin-bottom:20px; font-size:17px;font-weight:bold; text-align:center;'>迁移云管系统使用概况</font>	
+	    	</div>
+	    	<div id='mainResMachine' class='mainPageRes'></div>
+	    	<div id='mainWarnDealing' class='mainPageRes'></div>
+	    	<div id='mainWarnUnDeal' class='mainPageRes'></div>
+	    	<div id='mainResApp' class='mainPageRes'></div>
+	    	<div id='mainResLogs' class='mainPageRes'></div>
+	    	<div id='mainResDisk' class='mainPageRes'></div>
+	    </div>
+	    <div id='mainChartDisk' class='mainPageChart'></div>
+	    <div id='mainChartLogCount' class='mainPageChart'></div>
+    </div>
+
+    <div id='dmpPluginStatus' style='display:none; padding-left:8px;'>
+    </div>
+</div>
+
+
+<script language="javascript" type="text/javascript">
+var g_dcAppInfoAddr = 'local'; //'<?cs var:config.app_info_addr ?>';
+var g_dcChartDiskUse = null;
+var g_dcChartLogCount = null;
+var g_dcChartTop = null;
+
+var g_dcChartMinWidth = 420;
+var g_dcMainInfoWidthFix = 600; // 等于 id mainResUseStatus 的 width
+var g_dcMainChartWidth = 420;
+var g_dcMainFirstChartWidth = 420;
+var g_dcMainFirstChartCount = 0;
+var g_dcLastContentW = 0;
+var g_dcLastContentTopW = 0;
+var g_dcLastContentTopH = 0;
+
+// navtab 切回到 - '我的主页'
+function dcOnMainPage(idx)
+{
+	if(typeof idx == 'undefined')
+		$('#navTab').find('.main').trigger('click');
+	dcMainPageSetChartSize();
+}
+
+function dcMainPageRedrawChart()
+{
+	if(g_dcChartDiskUse != null) {
+	    if(g_dcMainFirstChartCount > 0) {
+			$('#mainChartDisk').css('width', g_dcMainFirstChartWidth);
+			g_dcChartDiskUse.resize();
+		}
+		else {
+			$('#mainChartDisk').css('width', g_dcMainChartWidth);
+			g_dcChartDiskUse.resize();
+		}
+
+		if(g_dcMainFirstChartCount > 1) {
+			$('#mainChartLogCount').css('width', g_dcMainFirstChartWidth);
+			g_dcChartLogCount.resize();
+		}
+		else {
+			$('#mainChartLogCount').css('width', g_dcMainChartWidth);
+			g_dcChartLogCount.resize();
+		}
+	}
+}
+
+function dcMainPageSetChartSize()
+{
+	// 25 -- 预留给滚动条
+	var iContentW = $(window).width() - (DWZ.ui.sbar ? $("#sidebar").width() + 10 : 34) - 5 - 45;
+    var iContentH = $(window).height() - 180;
+
+    // 网络实时拓扑
+    if($('#dmpTopStatus').css('display') == 'block')  {
+        if(!dcAdapatTopWH(iContentW, iContentH))
+            return;
+        if(g_dcChartTop != null)
+            g_dcChartTop.resize();
+        return;
+    }
+
+    // 插件表格
+    if($('#dmpPluginStatus').css('display') == 'block') {
+        if($('#dmpPluginStatus').css('width') != iContentW-20)
+            $('#dmpPluginStatus').css('width', iContentW-20);
+        return;
+    }
+
+    // 迁移云管系统概况
+	if(g_dcLastContentW == iContentW) 
+		return;
+    g_dcLastContentW = iContentW;
+	if(iContentW <= g_dcChartMinWidth+20+20) {
+		g_dcMainChartWidth = g_dcChartMinWidth;
+		g_dcMainFirstChartWidth = g_dcChartMinWidth;
+        g_dcMainFirstChartCount = 0;
+        $('#mainResUseStatus').css('margin', '10px 20px');
+	}
+	else {
+		var xWidth = g_dcChartMinWidth+20+20;
+		var xLeft = iContentW % xWidth;
+		var xCount = dmtMathtrunc(iContentW/xWidth);
+		var xBlank = dmtMathtrunc(xLeft/xCount);
+		g_dcMainChartWidth = g_dcChartMinWidth+xBlank;
+
+		iContentW -= g_dcMainInfoWidthFix+20+20;
+		xLeft = iContentW % xWidth;
+		xCount = dmtMathtrunc(iContentW/xWidth);
+		if(xCount > 0) {
+			xBlank = dmtMathtrunc(xLeft/xCount);
+			g_dcMainFirstChartWidth = g_dcChartMinWidth+xBlank;
+			g_dcMainFirstChartCount = xCount;
+            $('#mainResUseStatus').css('margin', '10px 20px');
+		}
+		else {
+            var w = (g_dcLastContentW-600)/2;
+            $('#mainResUseStatus').css('margin-left', w).css('margin-right', w);
+			g_dcMainFirstChartCount = 0;
+        }
+	}
+	dcMainPageRedrawChart();
+}
+
+function dcSetAppLogCountInfoEChart(result)
+{
+	var op = {
+        backgroundColor: 'transparent',
+		title: {
+			x: 'center',
+			text:'日志记录数目分布'
+		},
+		tooltip: {
+			trigger:'item',
+			confine:true,
+			formatter: function (params) {
+				var sstr = params.data.name + '<br />';
+				sstr += params.data.value + ', ';
+				sstr += '('+ params.percent + '%)';
+				return sstr;
+			}
+		},
+		grid: {
+		},
+		series: [
+			{
+				type:'pie',
+				name:'日志记录数',
+				radius:'70%',
+				center:['50%', '54%'],
+				data:[],
+				label: { 
+					show: true,
+	        		normal: {
+            	        show: false,
+            	        position: 'inside'
+            	    },
+            	    emphasis: {
+            	        show: false,
+            	    }
+            	},
+				itemStyle: {
+					emphasis: {
+						shadowBlur: 10,
+						shadowOffsetX: 0,
+						shadowColor: 'rgba(0, 0, 0, 0.5)'
+					}
+				}
+			}
+		]
+	};
+
+	if(typeof result.app_logcount_info != 'undefined' && result.app_logcount_info != null)
+		op.series[0].data = result.app_logcount_info;
+	else {
+		op.title.subtext = '暂无数据';
+	}
+	op.series[0].label = { show: true, formatter: '{b}：{d}%' };
+	if(g_dcMainFirstChartCount > 1)
+		$('#mainChartLogCount').css('width', g_dcMainFirstChartWidth);
+	else
+		$('#mainChartLogCount').css('width', g_dcMainChartWidth);
+
+	if(g_dcChartLogCount != null)
+		g_dcChartLogCount.dispose();
+	g_dcChartLogCount= echarts.init(document.getElementById('mainChartLogCount'), g_dmtChartStyle);
+	g_dcChartLogCount.setOption(op);
+}
+
+function dcSetAppDiskInfoEChart(result)
+{
+	var op = {
+        backgroundColor: 'transparent',
+		title: {
+			x: 'center',
+			text:'日志系统磁盘空间使用分布'
+		},
+		tooltip: {
+			trigger:'item',
+			formatter: function (params) {
+				var sstr = params.data.name + '<br />';
+				sstr += dmtGetHumanReadDigitByKB(params.data.value) + ', ';
+				sstr += '('+ params.percent + '%)';
+				return sstr;
+			}
+		},
+		grid: {
+		},
+		series: [
+			{
+				type:'pie',
+				name:'应用名称',
+				radius:'70%',
+				center:['50%', '54%'],
+				data:[],
+				label: { 
+					show: true,
+	        		normal: {
+            	        show: true,
+            	        position: 'inside'
+            	    },
+            	    emphasis: {
+            	        show: false,
+            	    }
+            	},
+				itemStyle: {
+					emphasis: {
+						shadowBlur: 10,
+						shadowOffsetX: 0,
+						shadowColor: 'rgba(0, 0, 0, 0.5)'
+					}
+				}
+			}
+		]
+	};
+
+	if(typeof result.app_disk_info != 'undefined' && result.app_disk_info != null)
+		op.series[0].data = result.app_disk_info;
+	else {
+		op.title.subtext = '暂无数据';
+	}
+	op.series[0].label = { show: true, formatter: '{b}：{d}%' };
+	if(g_dcMainFirstChartCount > 0)
+		$('#mainChartDisk').css('width', g_dcMainFirstChartWidth);
+	else
+		$('#mainChartDisk').css('width', g_dcMainChartWidth);
+
+	if(g_dcChartDiskUse != null)
+		g_dcChartDiskUse.dispose();
+	g_dcChartDiskUse = echarts.init(document.getElementById('mainChartDisk'), g_dmtChartStyle);
+	g_dcChartDiskUse.setOption(op);
+}
+
+function dcSetResourceUseEChart(res)
+{
+	var op = null;
+
+	var dcChartResMachine = echarts.init(document.getElementById('mainResMachine'), g_dmtChartStyle);
+	op = dmtGetUsePerPieOption({
+			c_text:'监控服务器\n', 
+			c_subtext:''+res.machine_count, 
+			c_val:100, 
+			c_name:'mainResMachine', 
+			c_colors:['#1d54f7', '#00cefc', '#68eaf9', '#367bec'],
+			c_sublink:'#'
+		});
+	dcChartResMachine.setOption(op);
+	dcChartResMachine.on('click', function(para) { 
+			navTab.openTab('dmt_machine', g_siteInfo.cgi_path + 'mt_slog_machine?action=list',
+			    {title:'上报机器管理', titleHtml:"<i class='icon icon-desktop'></i>上报机器管理", fresh:true});
+		});
+
+	var dcChartWarnUnDeal= echarts.init(document.getElementById('mainWarnUnDeal'), g_dmtChartStyle);
+	op = dmtGetUsePerPieOption({
+			c_text:'未处理提示\n', 
+			c_subtext: ''+res.warn_undeals, 
+			c_val:100, 
+			c_name:'mainWarnUnDeal', 
+			c_colors:['#d48265', '#ff0000', '#f00', '#d48265', 'red'],
+			c_sublink:'#'
+		});
+	dcChartWarnUnDeal.setOption(op);
+	dcChartWarnUnDeal.on('click', function(para) {
+			navTab.openTab('dmt_warn_list', 
+				g_siteInfo.cgi_path + 'mt_slog_showview?action=search_warn_list&dwl_deal_status_sel=0',
+			    {title:'监控点提示列表', titleHtml:"<i class='icon icon-screenshot'></i>监控点提示列表", fresh:true});
+		});
+
+	var dcChartWarnDealing = echarts.init(document.getElementById('mainWarnDealing'), g_dmtChartStyle);
+	op = dmtGetUsePerPieOption({
+			c_text:'处理中提示\n', 
+			c_subtext: ''+res.warn_dealings, 
+			c_val:100, 
+			c_name:'mainWarnDealing', 
+			c_sublink:'#',
+			c_colors:['#ca8622', '#d48265', '#d48265', '#ca8622', '#d48265']
+		});
+	dcChartWarnDealing.setOption(op);
+	dcChartWarnDealing.on('click', function(para) {
+			navTab.openTab('dmt_warn_list', 
+				g_siteInfo.cgi_path + 'mt_slog_showview?action=search_warn_list&dwl_deal_status_sel=1',
+			    {title:'监控点提示列表', titleHtml:"<i class='icon icon-screenshot'></i>监控点提示列表", fresh:true});
+		});
+
+	var dcChartResApp = echarts.init(document.getElementById('mainResApp'), g_dmtChartStyle);
+	op = dmtGetUsePerPieOption({
+			c_text:'应用数：'+res.app_count+'\n', 
+			c_subtext:'模块数：'+res.module_count, 
+			c_val:100, 
+			c_name:'mainResApp', 
+			c_colors:['#15d9b2', '#06de9b', '#68eaf9', '#367bec'], 
+			c_sublink:'#',
+			c_items:2
+		});
+	dcChartResApp.setOption(op);
+	dcChartResApp.on('click', function(para) {
+			navTab.openTab('dmt_list_app', 
+				g_siteInfo.cgi_path + 'mt_slog?action=list_app',
+			    {title:'应用管理', titleHtml:"<i class='icon icon-th-large'></i>应用管理", fresh:true});
+		});
+
+	var dcChartLogs = echarts.init(document.getElementById('mainResLogs'), g_dmtChartStyle);
+	op = dmtGetUsePerPieOption({
+			c_text:'日志记录数\n', 
+			c_subtext: ''+res.log_records, 
+			c_val:100, 
+			c_sublink:'#',
+			c_name:'mainResModule', 
+			c_colors:['#1d54f7', '#00cefc', '#68eaf9', '#367bec']
+		});
+	dcChartLogs.setOption(op);
+	dcChartLogs.on('click', function(para) {
+			navTab.openTab('dmt_realtime_log', 
+				g_siteInfo.cgi_path + 'mt_slog?action=show_realtime_log',
+			    {title:'实时日志查看', titleHtml:"<i class='icon icon-cloud-upload'></i>实时日志查看", fresh:true});
+		});
+
+	var logSpace = '';
+	if(res.log_space_kb > 0)
+		logSpace = dmtGetHumanReadDigitByKB(res.log_space_kb);
+	else 
+		logSpace = res.log_space_b+' B';
+	var dcChartResDisk = echarts.init(document.getElementById('mainResDisk'), g_dmtChartStyle);
+	op = dmtGetUsePerPieOption({
+			c_text:'已使用磁盘空间\n', 
+			c_subtext:logSpace, 
+			c_val:100, 
+			c_name:'mainResDisk', 
+			c_sublink:'#',
+			c_colors:['#749f83', '#61a0a8', '#61a0a8', '#749f83']
+		});
+	dcChartResDisk.setOption(op);
+	dcChartResDisk.on('click', function(para) {
+			navTab.openTab('dmt_log_files', 
+				g_siteInfo.cgi_path + 'mt_slog?action=log_files',
+			    {title:'日志文件列表', titleHtml:"<i class='icon icon-cloud-download'></i>日志文件列表", fresh:true});
+		});
+}
+
+function dcInitMainPage()
+{
+	$('#dc_btn_refresh').click(dcRefreshMainPage);
+
+	<?cs if:config.notify_daemon ?>
+	$('#dcNotifyMsg').text("温馨提示：current version为演示版，某些操作已被禁止");
+	<?cs else ?>
+	$('#dc_btn_hidden_tip').click(function() {
+		$('#dcNotifyMsg').css('display', 'none');
+		window.localStorage.setItem('cur_hide_tips_id', $('#dcNotifyMsg').data('tips_news_id'));
+		$('#dc_btn_hidden_tip').css('display', 'none');
+	});
+
+	// 尝试从云版本中拉取最新的开源版本信息或者相关的技术文章，如果拉取到则在主页展示提示信息
+	// 用户如不需要可以自行删除该部分代码，建议您保留以便获取到最新的项目动态
+	var requrl = '<?cs var:config.DES-PWE_url ?>/cgi-bin/mt_slog_open';
+	var reqdata = new Object();
+	reqdata.action = 'open_get_news';
+	reqdata.rhost = location.host;
+	reqdata.rurl = location.href;
+	$.ajax({
+		type:'post',
+		url: requrl,
+		data: reqdata,
+		global: false,
+		dataType: 'json',
+		success: function(js) {
+			var hId = window.localStorage.getItem('cur_hide_tips_id');
+			if(js.ret == 0 && hId != js.news_id) {
+				$('#dcNotifyMsg').text(js.news_text);
+				if(typeof js.news_title != 'undefined')
+					$('#dcNotifyMsg').attr('title', js.news_title);
+				var nlink = '<a style="font-size:16px; font-weight:500; cursor:pointer; color:red;"';
+				nlink += ' target="_blank" href="' + js.news_url + '"></a>';
+				$('#dcNotifyMsg').wrap(nlink);
+				$('#dcNotifyMsg').data('tips_news_id', js.news_id);
+				$('#dc_btn_hidden_tip').css('display', 'block');
+				$('.center').css('cursor', 'pointer');
+			}
+		}
+	});
+	<?cs /if ?>
+}
+
+function dcSetStatInfo(result)
+{
+	if(dmtFirstDealAjaxResponse(result))
+		return;
+    dcMainPageSetChartSize();
+	dcSetResourceUseEChart(result);
+	dcSetAppDiskInfoEChart(result);
+	dcSetAppLogCountInfoEChart(result);
+}
+
+function dcAdapatTopWH(iContentW, iContentH)
+{
+	if(g_dcLastContentTopW == iContentW && iContentH == g_dcLastContentTopH)
+		return false;
+    g_dcLastContentTopW = iContentW;
+    g_dcLastContentTopH = iContentH;
+    $('#dmpTopStatus').width(g_dcLastContentTopW-20).height(g_dcLastContentTopH);
+    return true;
+}
+
+function dcSetTopInfo(js)
+{
+	if(dmtFirstDealAjaxResponse(js))
+		return;
+    if(g_dcChartTop != null)
+        g_dcChartTop.dispose();
+    g_dcChartTop = dmtShowTreeChart(js, 'dmpTopStatus');
+}
+
+function dcGetMainTablePluginTitleButtonsHtml(plugin, table_id)
+{
+    var tb = ''
+    if(plugin.set_method == 0) {
+        tb += '<span class="xrk_text_button2">';
+        tb += '<a href="<?cs var:config.cgipath?>mt_slog?action=dp_add_plugin&id=' + plugin.id + '"';
+        tb += ' title="一键部署插件" target="navTab" rel="dp_add_plugin" >';
+        tb += '<i class="icon-wrench icon-large"></i>部署</a></span>';
+    }
+    if(plugin.has_view_cust) {
+        tb += "<span class='xrk_text_button2'><a href='<?cs var:config.cgipath?>mt_slog?action=show_plugin_monitor&plugin_id=";
+        tb += plugin.id + "' target='navTab' fresh='true' rel='showplugin_" + plugin.id + "' title='查看插件图表'";
+        tb += "><i class='icon-puzzle-piece'></i>图表</a></span>";
+    }
+    else {
+        tb += "<span class='xrk_text_button2'><a href='<?cs var:config.cgipath?>mt_slog?action=plugin_view_list&plugin_id=";
+        tb += plugin.id + "' target='navTab' fresh='true' rel='pluginview_" + plugin.id + "' title='查看插件图表'";
+        tb += "><i class='icon-bar-chart'></i>图表</a></span>";
+    }
+
+    tb += '<span class="xrk_text_button2">';
+    tb += '<a href="<?cs var:config.cgipath?>mt_slog?action=plugin_show_tables&plugin=' + plugin.id + '"';
+    tb += ' title="查看插件实时表格" target="navTab" rel="dmt_pshow_realtime_table_' + plugin.id + '" >';
+    tb += '<i class="icon-table icon-large"></i>表格</a></span>';
+ 
+    tb += '<span class="xrk_text_button2">';
+    tb += '<a href="#" plugin_id="' + plugin.id + '" table_id="' + table_id + '" ';
+    tb += ' class="xrk_hide_plugin_table_4main" title="首页隐藏该表格" >';
+    tb += '<i class="icon-eye-close icon-large"></i>隐藏</a></span>';
+
+    return tb;
+}
+
+function dcSetMainPluginTablesInfo(js)
+{
+    if(dmtFirstDealAjaxResponse(js))
+        return;
+
+	var iContentW = $(window).width() - (DWZ.ui.sbar ? $("#sidebar").width() + 10 : 34) - 5 - 45;
+    if($('#dmpPluginStatus').css('width') != iContentW-20)
+        $('#dmpPluginStatus').css('width', iContentW-20);
+
+    var tball = '', tb = '';
+    if(typeof js.plugins == 'undefined') {
+        tb = '<div style="margin-top:40px; text-align:center; color:red; font-size:16px; font-weight:bold">';
+        tb += '首页未配置任何插件表格<br />您可安装部署插件后在插件表格的多机汇总页面设置首页展示的表格';
+        tb += '</div>';
+        $('#dmpPluginStatus').html(tb);
+        return;
+    }
+
+    for(var i=0, j=0; i < js.plugins.length; i++) 
+    {
+        for(j=0; j < js.plugins[i].tables.length; j++) 
+        {
+
+            // 表格字段标题
+            tb = '';
+            tb += '<table width="98%" class="plugin_table list">';
+            tb += '<thead>';
+            tb += "<tr><th colspan='" + (js.plugins[i].tables[j].fields.length+3) + "' class='list_table_title' >"
+            tb += js.plugins[i].tables[j].name + ' - 来自插件：<span class="xrk_text_bl2">' + js.plugins[i].name + '</span>';
+            tb += '<div style="float:right; margin-right:6px">';
+            tb += dcGetMainTablePluginTitleButtonsHtml(js.plugins[i], js.plugins[i].tables[j].id);
+            tb += '</div>';
+            tb += '</th></tr>';
+
+            // 表格字段
+            tb += '<tr>';
+            tb += "<th>上报机器</th>";
+            tb += "<th>上报时间</th>";
+            tb += "<th>统计时间</th>";
+            var t_field = js.plugins[i].tables[j].fields;
+            for(var f=0; f < t_field.length; f++) 
+            {
+                if(t_field[f].b_has_order) {
+                    if(t_field[f].order_type == 1)
+                        tb += "<th class='desc xrk_sortable xrk_sortable_def'>" + t_field[f].field_name + "</th>";
+                    else if(t_field[f].order_type == 2)
+                        tb += "<th class='asc xrk_sortable xrk_sortable_def'>" + t_field[f].field_name + "</th>";
+                    else
+                        tb += "<th class='asc xrk_sortable'>" + t_field[f].field_name + "</th>";
+                }
+                else
+                    tb += "<th>" + t_field[f].field_name + "</th>";
+            }
+            tb += "</tr>";
+            tb += '</thead>';
+
+            // 表格记录列表
+            tb += '<tbody>';
+            var frecords = js.plugins[i].tables[j].records;
+            for(var fv=0; fv < frecords.length; fv++) 
+            {
+                var fvals = frecords[fv].value.split('$');
+                var tbtmp = '<tr>';
+                tbtmp += '<td><span class="xrk_text_bl2">' + frecords[fv].host + '</span></td>';
+                tbtmp += '<td>' + frecords[fv].last_report_time + '</td>';
+                tbtmp += '<td>' + frecords[fv].static_time + '</td>';
+
+                var ij = 0;
+                for(ij = 0; ij < fvals.length; ij++) 
+                    fvals[ij] = fvals[ij].split('#');
+                for(ij=0, ijk=0; ij < t_field.length; ij++) {
+                    for(ijk=0; ijk < fvals.length; ijk++) {
+                        if(fvals[ijk][0] == t_field[ij].field_id)
+                            break;
+                    }
+                    if(ijk >= fvals.length) {
+                        if(t_field[ij].val_type >= 0 && t_field[ij].val_type <= 4)
+                            tbtmp += '<td src_val="0"></td>';
+                        else
+                            tbtmp += '<td></td>';
+                        continue;
+                    }
+
+                    if(t_field[ij].val_type >= 0 && t_field[ij].val_type <= 4) {
+                        if(t_field[ij].b_use_color && (fvals[ijk][1]).indexOf("fail") != -1)
+                            tbtmp += '<td style="color:red; font-weight:bold;" src_val="' 
+                                + (fvals[ijk][1]).replace('(fail)', '') + '">';
+                        else
+                            tbtmp += '<td src_val="' + fvals[ijk][1] + '">';
+                    }
+                    else {
+                        if(t_field[ij].b_use_color && (fvals[ijk][1]).indexOf("fail") != -1)
+                            tbtmp += '<td style="color:red; font-weight:bold;">';
+                        else
+                            tbtmp += '<td>';
+                    }
+
+                    if(t_field[ij].val_type == 0)
+                        tbtmp += fvals[ijk][1];
+                    else if(t_field[ij].val_type == 1)
+                        tbtmp += fvals[ijk][1] + '%';
+                    else if(t_field[ij].val_type == 2) {
+                        var f = fvals[ijk][1]/100;
+                        tbtmp += f.toFixed(2);
+                    }
+                    else if(t_field[ij].val_type == 3)
+                        tbtmp += dmtGetHumanReadFixed2ByKB(fvals[ijk][1]);
+                    else if(t_field[ij].val_type == 4)
+                        tbtmp += dmtGetHumanReadFixed2(fvals[ijk][1]);
+                    else
+                        tbtmp += fvals[ijk][1];
+                    tbtmp += '</td>';
+                }
+                tbtmp += '</tr>';
+                tb += tbtmp;
+            }
+
+            tb += '</tbody>';
+            tb += '</table>';
+            tball += tb;
+        }
+    }
+
+    if(tball == '') {
+        tb = '<div style="margin-top:40px; text-align:center; color:red; font-size:16px; font-weight:bold">';
+        tb += '首页未配置任何插件表格<br />您可安装部署插件后在插件表格的多机汇总页面设置首页展示的表格';
+        tb += '</div>';
+        $('#dmpPluginStatus').html(tb);
+        return;
+    }
+
+    $('#dmpPluginStatus').html(tball).initUI();
+    $('#dmpPluginStatus .plugin_table').each(function() {
+        dmtSortTable($(this).find('th.xrk_sortable'));
+        $(this).find('th.xrk_sortable_def').trigger('click');
+    });
+
+    $('.xrk_hide_plugin_table_4main').click(function() {
+        var plugin_id = $(this).attr('plugin_id');
+        var cur_table = $(this).attr('table_id');
+        var show_tables = [];
+
+        $('.xrk_hide_plugin_table_4main').each(function() {
+            if($(this).attr('plugin_id') == plugin_id && $(this).attr('table_id') != cur_table)
+                show_tables.push($(this).attr('table_id'));
+        });
+        dmtSetPluginShowMainTable('<?cs var:plugin.plugin_log_server_ip ?>', <?cs var:plugin.plugin_log_server_port ?>, 
+            plugin_id, show_tables, function(js) {
+                if(js == null || typeof js.ret == 'undefined' || js.ret != 0) {
+                    alertMsg.warn("首页隐藏表格配置保存失败!");
+                }
+                else {
+                    alertMsg.info("隐藏成功，您可在插件表格多机汇总页面重新开启显示");
+                    dcRefreshPluginInfo();
+                }
+        });
+    });
+}
+
+function dcRefreshPluginInfo()
+{
+	var cgi_path; 
+	if(typeof g_siteInfo.cgi_path != 'undefined' && g_siteInfo.cgi_path != '')
+		cgi_path = g_siteInfo.cgi_path;
+	else
+		cgi_path = '/cgi-bin/';
+
+    // 向插件应用所在的日志服务器发起请求以查询实时表格数据
+	var para = new Object();
+	var requrl = cgi_path + '/mt_slog?';
+    if('<?cs var:plugin.plugin_log_server_ip ?>' != 'null') {
+        requrl = 'http://<?cs var:plugin.plugin_log_server_ip ?>:<?cs var:plugin.plugin_log_server_port ?>' + requrl;
+	    para.ex_flogin_user = $.cookie("flogin_user");
+	    para.ex_flogin_md5 = $.cookie("flogin_md5");
+	    para.ex_flogin_type = $.cookie("flogin_type");
+	    para.ex_flogin_uid = $.cookie("flogin_uid");
+	    para.ex_flogin_index = $.cookie("flogin_index");
+    }
+	para.action = 'refresh_main_plugin_tables';
+
+	$.ajax({
+		type: "post",
+		url: requrl,
+		data: para,
+		success: dcSetMainPluginTablesInfo,
+		dataType: 'json', 
+		global: true,
+		timeout: function(){
+		    alertMsg.warn("请求超时");
+        },
+		error: DWZ.ajaxError
+	});
+}
+
+function dcRefreshTopInfo()
+{
+	var requrl = g_siteInfo.cgi_path + "mt_slog_showview";
+	var para = new Object();
+	para.action = 'refresh_top_info';
+	$.ajax({
+		type: "POST",
+		url: requrl,
+		data: para,
+		success: dcSetTopInfo,
+		dataType: 'json', 
+		global: false,
+		error: function() {
+		    alertMsg.warn("脚本请求出错");
+		}  
+	});
+}
+
+function dcRefreshMainPage()
+{
+    if($('#dmpTopStatus').css('display') == 'block') 
+        dcRefreshTopInfo();
+    else if($('#dmpSysStatus').css('display') == 'block')
+        dcRefreshStatInfo();
+    else
+        dcRefreshPluginInfo();
+}
+
+function dcRefreshStatInfo()
+{
+	var requrl = '';
+	var para = new Object();
+	para.action = 'refresh_main_info';
+
+	if(g_dcAppInfoAddr == 'local') {
+		requrl = g_siteInfo.cgi_path + "mt_slog?";
+	}
+	else {
+		para.ex_flogin_user = $.cookie("flogin_user");
+		para.ex_flogin_md5 = $.cookie("flogin_md5");
+		para.ex_flogin_type = $.cookie("flogin_type");
+		para.ex_flogin_uid = $.cookie("flogin_uid");
+		para.ex_flogin_index = $.cookie("flogin_index");
+		requrl = 'http://'+g_dcAppInfoAddr+g_siteInfo.cgi_path + "mt_slog?";
+	}
+
+	$.ajax({
+		type: "POST",
+		url: requrl,
+		data: para,
+		success: dcSetStatInfo,
+		dataType: 'json', 
+		global: false,
+		error: function() {
+		    alertMsg.warn("脚本请求出错");
+		}  
+	});
+}
+
+function dmpShowTopStatus()
+{
+    $('#dmpTopStatus').show();
+    $('#dmpSysStatus').hide();
+    $('#dmpPluginStatus').hide();
+    dcRefreshTopInfo();
+    dcMainPageSetChartSize();
+    window.localStorage.setItem('dmp_show_type', 'top');
+}
+
+function dmpShowSysStatus()
+{
+    $('#dmpTopStatus').hide();
+    $('#dmpSysStatus').show();
+    $('#dmpPluginStatus').hide();
+    dcRefreshStatInfo();
+    window.localStorage.setItem('dmp_show_type', 'sys');
+}
+
+function dmpShowPluginStatus()
+{
+    $('#dmpTopStatus').hide();
+    $('#dmpSysStatus').hide();
+    $('#dmpPluginStatus').show();
+    dcRefreshPluginInfo();
+    window.localStorage.setItem('dmp_show_type', 'plugin');
+}
+
+</script>
+

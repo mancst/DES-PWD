@@ -1,0 +1,8 @@
+VER_MAJOR = 1
+VER_MINOR = 1.0
+INSTALL_INC = *.h
+SRCS = neo_err.c neo_files.c neo_misc.c neo_rand.c ulist.c neo_hdf.c neo_str.c neo_date.c wildmat.c ulocks.c rcfs.c skiplist.c dict.c filter.c neo_net.c neo_server.c neo_hash.c
+
+INCLS = ./dict.h ./filter.h ./neo_date.h ./neo_err.h ./neo_files.h ./neo_hash.h ./neo_hdf.h ./neo_misc.h ./neo_net.h ./neo_rand.h ./neo_server.h ./neo_str.h ./osdep.h ./rcfs.h ./skiplist.h ./ulist.h ./ulocks.h ./wdb.h ./wildmat.h
+
+INCLUDE = -I. -I..

@@ -1,0 +1,76 @@
+
+<div id='ddal_logtypes' class='xrk_chart_container_dlg' style='width:560px; height:520px;margin-top:10px;'>
+</div>
+
+<script language="javascript" type="text/javascript">
+
+var g_ddalChartLogType = null;
+
+$(document).ready(function(){
+	var op = {
+        color: g_dmtChartColor,
+        backgroundColor: 'transparent',
+		title: {
+			x: 'center',
+            top: '15',
+			text:'<?cs var:config.app_name ?>'
+		},
+		tooltip: {
+			trigger:'item',
+			confine:true,
+			formatter: '{b} <br /> {c} ({d}%)'
+		},
+		grid: {
+		},
+        legend : {
+            orient : 'horizontal',
+            bottom: '80',
+            show : true
+        },
+        toolbox :{
+            show:true,
+            feature: { dataView: { show:false} }
+        },
+		series: [
+			{
+				type:'pie',
+				name:'日志类型',
+				radius:'48%',
+				center:['50%', '45%'],
+				data:[],
+				label: { 
+					show: true,
+	        		normal: {
+            	        show: true,
+            	        position: 'inside'
+            	    },
+            	    emphasis: {
+            	        show: false,
+            	    }
+            	},
+				itemStyle: {
+					emphasis: {
+						shadowBlur: 10,
+						shadowOffsetX: 0,
+						shadowColor: 'rgba(0, 0, 0, 0.5)'
+					}
+				}
+			}
+		]
+	};
+
+    <?cs if:config.has_data ?>
+	op.series[0].data = <?cs var:config.logtypes ?>;
+    <?cs else ?>
+	op.title.subtext = '暂无数据';
+    <?cs /if ?>
+
+	op.series[0].label = { show: true, formatter: '{b}：{c}({d}%)' };
+	if(g_ddalChartLogType != null)
+		g_ddalChartLogType.dispose();
+	g_ddalChartLogType = echarts.init(document.getElementById('ddal_logtypes'), g_dmtChartStyle);
+	g_ddalChartLogType.setOption(op);
+});
+
+</script>
+

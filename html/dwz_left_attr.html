@@ -1,0 +1,84 @@
+<div class="accordion" fillSpace="sidebar">
+	<div class="accordionHeader">
+		<h2><i class="icon-warning-sign icon-large "></i>迁移提示查看<i class="icon icon-chevron-up"></i></h2>
+	</div>
+	<div class="accordionContent">
+		<ul class="tree expand">
+			<li><a href="<?cs var:config.cgipath?>mt_slog_showview?action=show_warn_list" target="navTab" rel="dmt_warn_list">
+				<i class='icon icon-screenshot '></i>监控点提示列表</a></li>
+			<!--
+			<li><a href="<?cs var:config.cgipath?>mt_slog_showview?action=show_warn_list" target="navTab" rel="dmt_warn_list">
+				<i class='icon icon-reorder '></i>日志提示列表</a></li>
+			-->
+		</ul>
+	</div>
+	<!--<div class="accordionHeader">
+		<h2><i class="icon-file-alt icon-large "></i>日志查看<i class="icon icon-chevron-up"></i></h2>
+	</div>
+	<div class="accordionContent">
+		<ul class="tree ">
+			<li><a href="<?cs var:config.cgipath?>mt_slog?action=show_realtime_log" target="navTab" fresh="true" rel="dmt_realtime_log"><i class='icon icon-cloud-upload '></i>实时日志查看</a></li>
+			<li><a href="<?cs var:config.cgipath?>mt_slog?action=show_history_log" target="navTab" fresh="true" rel="dmt_history_log"><i class='icon icon-cloud-download '></i>历史日志查看</a></li>
+			<li><a href="<?cs var:config.cgipath?>mt_slog?action=log_files" target="navTab" fresh="true" rel="dmt_log_files"><i class='icon icon-copy'></i>日志文件列表</a></li>
+		</ul>
+	</div>-->
+
+    <?cs if:ShowPlugin.table_count > 0 ?>
+	<div class="accordionHeader">
+		<h2><i class="icon-table icon-large"></i>插件实时表格<i class="icon icon-chevron-up"></i></h2>
+	</div>
+	<div class="accordionContent">
+		<ul class="tree">
+            <?cs each:show=ShowPlugin.lists ?> 
+                <?cs if:show.table == 1 ?>
+			    <li><a title='<?cs var:show.name ?>-表格' href="<?cs var:config.cgipath?>mt_slog?action=plugin_show_tables&plugin=<?cs var:show.plugin_id ?>" target="navTab" rel="dmt_pshow_realtime_table_<?cs var:show.plugin_id ?>"><i class="icon-table"></i><?cs var:show.name ?></a></li>
+                <?cs /if ?>
+            <?cs /each ?>
+		</ul>
+	</div>
+    <?cs /if ?>
+
+    <?cs if:ShowPlugin.count > 0 ?>
+	<div class="accordionHeader">
+		<h2><i class="icon-area-chart icon-large"></i>插件图表<i class="icon icon-chevron-up"></i></h2>
+	</div>
+	<div class="accordionContent">
+		<ul class="tree">
+            <?cs each:show=ShowPlugin.lists ?> 
+                <?cs if:show.cust == 1 ?>
+			    <li><a title='<?cs var:show.name ?>' href="<?cs var:config.cgipath?>mt_slog?action=show_plugin_monitor&plugin_id=<?cs var:show.plugin_id ?>" target="navTab" fresh="true" rel="showplugin_<?cs var:show.plugin_id ?>"><i class="icon-puzzle-piece"></i><?cs var:show.name ?></a></li>
+                <?cs else ?>
+			    <li><a title='<?cs var:show.name ?>' href="<?cs var:config.cgipath?>mt_slog?action=plugin_view_list&plugin_id=<?cs var:show.plugin_id ?>" target="navTab" fresh="true" rel="pluginview_<?cs var:show.plugin_id ?>"><i class="icon-bar-chart"></i><?cs var:show.name ?></a></li>
+                <?cs /if ?>
+            <?cs /each ?>
+		</ul>
+	</div>
+    <?cs /if ?>
+
+	<div class="accordionHeader">
+		<h2><i class="icon-coffee  icon-large"></i>视图查看<i class="icon icon-chevron-up"></i></h2>
+	</div>
+	<div class="accordionContent">
+		<ul class="tree">
+			<?cs each:mlist=Output.amlists ?>
+				<li title='<?cs var:mlist.name ?>'><a href="<?cs var:config.cgipath ?>mt_slog_showview?action=list&view_id=<?cs var:mlist.id ?>&view_name=<?cs var:mlist.name ?>" rel="showview_<?cs var:mlist.id ?>" target="navTab" fresh="true"><i class="icon-window-restore"></i> <?cs var:mlist.name ?></a></li>
+			<?cs /each ?>
+		</ul>
+	</div>
+	<div class="accordionHeader">
+		<h2><i class="icon-desktop icon-large "></i>服务器查看<i class="icon icon-chevron-up"></i></h2>
+	</div>
+	<div class="accordionContent">
+		<ul class="tree">
+			<?cs each:mlist=Output.machlists ?>
+                <?cs if:mlist.ip ?>
+				<li title='<?cs var:mlist.name ?>(<?cs var:mlist.ip ?>)'><a href="<?cs var:config.cgipath ?>mt_slog_showview?action=show_machine_attr&machine_id=<?cs var:mlist.id ?>&date=today" rel="showmachine_<?cs var:mlist.id ?>" target="navTab" fresh="true">
+                <?cs else ?>
+				<li title='<?cs var:mlist.name ?>'><a href="<?cs var:config.cgipath ?>mt_slog_showview?action=show_machine_attr&machine_id=<?cs var:mlist.id ?>&date=today" rel="showmachine_<?cs var:mlist.id ?>" target="navTab" fresh="true">
+                <?cs /if ?>
+					<i class='icon-television'></i><?cs var:mlist.name ?></a></li>
+			<?cs /each ?>
+		</ul>
+	</div>
+</div>
+

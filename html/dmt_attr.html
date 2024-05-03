@@ -1,0 +1,364 @@
+<div class="pageHeader">
+	<form class="pagerForm" method="post" onsubmit="return navTabSearch(this);" action="<?cs var:config.cgipath?>mt_slog_attr?action=search">
+		<?cs include:config.cspath+"dmt_page_para.html" ?>
+		<input type="hidden" name="da_attr_data_type" value="<?cs var:config.da_attr_data_type ?>" />
+		<input type="hidden" name="da_keyword" value="<?cs var:config.da_keyword ?>" />
+		<input type="hidden" name="dam_attr_type" value="<?cs var:config.dam_attr_type ?>">
+		<input type="hidden" name="dam_attr_type_name" value="<?cs var:config.dam_attr_type_name ?>">
+		<input type="hidden" name="dam_attr_static_time" value="<?cs var:config.dam_attr_static_time ?>">
+		<?cs if:config.da_excp_mask == 1 ?>
+		<input type="hidden" name="da_excp_mask" value="on">
+		<?cs /if ?>
+	</form>
+	<form onsubmit="return navTabSearch(this, 'dmt_attr');" action="<?cs var:config.cgipath?>mt_slog_attr?action=search" method="post">
+		<div class="searchBar">
+			<ul class="searchContent" >
+				<li>
+					<label>数据类型:</label>
+					<select class='xrk_combox' name="da_attr_data_type" id="da_attr_data_type">
+						<option value="0">全部</option>
+						<option value="<?cs var:config.sum_report_m ?>">累计量</option> 
+						<option value="<?cs var:config.sum_report_his ?>">历史累计量</option>
+						<option value="<?cs var:config.sum_report_min ?>">取上报最小值</option>
+						<option value="<?cs var:config.sum_report_max ?>">取上报最大值</option>
+						<option value="<?cs var:config.ex_report ?>">异常量</option>
+						<option value="<?cs var:config.str_report_d ?>">字符串型</option>
+						<option value="<?cs var:config.str_report_d_ip ?>">字符串型-IP省级</option>
+						<option value="<?cs var:config.data_use_last ?>">取最新上报值</option>
+					</select>
+				</li>
+                <li>
+					<label>统计周期:</label>
+				    <select class="xrk_combox" name="dam_attr_static_time" id="dam_attr_static_time">
+				        <option value="0" selected>全部</option>
+				    	<option value="1">1分钟</option>
+				    	<option value="5">5分钟</option>
+				    	<option value="10">10分钟</option>
+				    	<option value="15">15分钟</option>
+				    	<option value="30">30分钟</option>
+				    	<option value="60">1小时</option>
+				    	<option value="120">2小时</option>
+				    	<option value="180">3小时</option>
+				    </select>
+				</li>
+				<li>
+					<label>监控点类型:</label>
+					<input type="hidden" name="dam_attr_type" value="<?cs var:config.dam_attr_type ?>">
+					<input type="text" size="14" name="dam_attr_type_name" value="<?cs var:config.dam_attr_type_name ?>" readonly="readonly" />
+				</li>
+				<li align="left">
+					<a class="btnLook" href="<?cs var:config.cgipath ?>mt_slog_attr?action=lookUpAttrType" title="监控点类型选择" lookupGroup="" ></a>
+				</li>
+				<li>
+					<label>监控点ID:</label>
+					<input type="text" name="da_keyword" size="8" onkeyup="this.value=this.value.replace(/\D/g,'')" onafterpaste="this.value=this.value.replace(/\D/g,'')" value="<?cs var:config.da_keyword ?>" />
+				</li>
+				<li>
+					<div id='da_excp_mask_id' style='display:none'>
+					<?cs if:config.da_excp_mask == 1 ?>
+					<input type="checkbox" name="da_excp_mask" checked id='da_excp_mask'>
+					<?cs else ?>
+					<input type="checkbox" name="da_excp_mask" id='da_excp_mask'>
+					<?cs /if ?>
+					<label class='for' for='da_excp_mask' style='float:left;width:40px'>已屏蔽</label>
+					</div>
+				</li> 
+			</ul>
+			<div class="subBar">
+				<ul>
+					<li><button type="submit" class="buttonActive" id="da_btn_submit"><i class='icon-search icon-large '></i>查找</button></li>
+					<li><button type='button' class="buttonActive" id="da_btn_erase" onclick="return daClearSearch()"><i class='icon-trash icon-large '></i>重填</button></li>
+				</ul>
+			</div>
+		</div>
+	</form>
+</div>
+		
+<div class="pageContent"> 
+	<div class="panelBar">
+		<ul class="toolBar">
+			<li><a href="#" onclick="return daAddNewAttr();"><i class='icon-plus'></i>添加</a></li>
+			<li class="line">line</li>
+			<li><a href="#" onclick="return daDeleteAttr();"><i class='icon-minus'></i>删除</a></li>
+			<li class="line">line</li>
+			<li><a href="#" onclick="return daModAttr();"><i class='icon-edit'></i>修改</a></li>
+			<li class="line">line</li>
+			<li><a href="#" onclick="return daAddMultiNewAttr();"><i class='icon-asterisk'></i>批量导入</a></li>
+			<li class="line">line</li>
+		</ul>
+	</div>
+
+	<table class="list" width="100%" layoutH="0">
+		<thead>
+			<tr>
+				<?cs if:config.order_xrk_id ?>
+				<th width="70" orderField="xrk_id" class="<?cs var:config.order_xrk_id ?>">监控点id</th>
+				<?cs else ?>
+				<th width="70" orderField="xrk_id" class="asc">监控点id</th>
+				<?cs /if ?>
+
+				<th width="220">监控点名称</th>
+
+				<?cs if:config.order_attr_type ?>
+				<th width="180" orderField="attr_type" class="<?cs var:config.order_attr_type ?>">监控点类型</th>
+				<?cs else ?>
+				<th width="180" orderField="attr_type" class="asc">监控点类型</th>
+				<?cs /if ?>
+				<th width="60" orderField="static_time" class="asc">统计周期</th>
+
+				<?cs if:config.order_data_type ?>
+				<th width="110" orderField='data_type' class="<?cs var:config.order_data_type ?>">数据类型</th>
+				<?cs else ?>
+				<th width="110" orderField='data_type' class="asc">数据类型</th>
+				<?cs /if ?>
+
+                <th width="90">值类型</th>
+                <th width="60">图表类型</th>
+				<th width="200">监控点描述</th>
+				<th width="80">详情</th>
+			</tr>
+		</thead>
+		<tbody id="da_attr_list_info">
+		</tbody>
+	</table>
+	<?cs include:config.cspath+"dmt_page.html" ?>
+</div>
+
+<script language="javascript" type="text/javascript">
+var da_attrinfo = $.parseJSON('<?cs var:config.attrinfo ?>');
+var da_detail_sel_attr_idx = null;
+
+// 当前选中的监控点
+var da_sel_attr = "null";
+
+function daGetAttrValTypeStr(type)
+{
+    switch(type) {
+        case 0:
+            return '普通数值';
+        case 1:
+            return '百分数';
+        case 2:
+            return '除100后取两位小数';
+        case 3:
+            return '乘1024';
+        default:
+            return '未知';
+    }
+}
+
+function daGetAttrChartTypeStr(type)
+{
+    switch(type) {
+        case 0: 
+            return '曲线图';
+        case 1:
+            return '面积图';
+        case 6:
+            return '柱状图';
+        case 12:
+            return '饼图';
+        case 18:
+            return '散点图';
+        case 24:
+            return '地理图';
+        case 30:
+            return '关系图';
+        case 36:
+            return '树图';
+        case 42:
+            return '矩形树图';
+        case 48:
+            return '漏斗图';
+        case 54:
+            return '仪表盘';
+        default:
+            return '未知';
+    }
+}
+
+function daGetAttrDataTypeStr(type)
+{
+    switch(type) {
+        case <?cs var:config.sum_report_m ?>:
+            return '累计量';
+        case <?cs var:config.sum_report_his ?>:
+            return '历史累计量';
+        case <?cs var:config.sum_report_min ?>:
+            return '取上报最小值';
+        case <?cs var:config.sum_report_max ?>:
+            return '取上报最大值';
+        case <?cs var:config.str_report_d ?>:
+            return '字符串型';
+        case <?cs var:config.str_report_d_ip ?>:
+            return '字符串型-IP省级';
+        case <?cs var:config.data_use_last ?>:
+            return '取最新上报值';
+        case <?cs var:config.ex_report ?>:
+            return '异常量';
+
+        default:
+            return '未知类型';
+    }
+}
+
+
+function daSetSelAttr(selIndex)
+{
+	da_sel_attr = da_attrinfo.list[selIndex];
+}
+
+function daSetAttrList(attrinfo)
+{
+	var list = "";
+	var listattr = attrinfo.list;
+	for(var i=0,j=0; i < attrinfo.count && i < listattr.length; i++)
+	{
+		list += "<tr onclick='daSetSelAttr(" + i + ")'>";
+		list += "<td>" + listattr[i].id + "</td>";
+		list += "<td>" + listattr[i].name + "</td>";
+		list += "<td>" + listattr[i].attr_type + ' [' + listattr[i].attr_type_id + ']</td>';
+    	list += "<td>" + dmtShowHumanStaticTime(listattr[i].static_time) + "</td>";
+		if(listattr[i].data_type == <?cs var:config.ex_report ?>)
+		{
+			if(listattr[i].excep_attr_mask == 1)
+				list += "<td><span class='xrk_show_txt_hs'>异常量 | 已屏蔽提示</span></td>";
+			else
+				list += "<td>异常量</td>";
+		}
+		else
+			list += "<td>"+daGetAttrDataTypeStr(listattr[i].data_type)+"</td>";
+
+		list += "<td>"+daGetAttrValTypeStr(listattr[i].value_type)+"</td>";
+		list += "<td>"+daGetAttrChartTypeStr(listattr[i].chart_type)+"</td>";
+		list += "<td>" + listattr[i].attr_desc + "</td>";
+
+		var detail = "<a class='detail' href='#' onclick='return daDetailAttr("+i+");'>详情</a>";
+		list += "<td>" + detail + "</td>";
+		list += "</tr>";
+	}
+	return list;
+}
+
+function daDetailAttr(idx)
+{
+    da_detail_sel_attr_idx = idx;
+	var op = $.parseJSON('{"mask":true,"maxable":false,"height":310,"width":580}');
+	$.pdialog.open("<?cs var:config.docpath?>dmt_dlg_detail_attr.html", "da_dlg_attr_detail",
+		"监控点："+da_attrinfo.list[idx].name+" 详情", op);
+}
+
+function daModAttr()
+{
+	if(da_sel_attr == "null")
+	{
+		alertMsg.info("请先点击监控点列表选择一个要修改的监控点");
+		return;
+	}
+
+	var url = "<?cs var:config.cgipath?>mt_slog_attr?action=mod_attr";
+	url += "&attr_id=" + da_sel_attr.id; 
+	url += "&attr_name=" + encodeURIComponent(da_sel_attr.name);
+	url += "&attr_desc=" + encodeURIComponent(da_sel_attr.attr_desc);
+	url += "&attr_data_type=" + da_sel_attr.data_type;
+	url += "&attr_type_name=" + encodeURIComponent(da_sel_attr.attr_type);
+	url += "&attr_type_id=" + da_sel_attr.attr_type_id;
+	url += "&static_time=" + da_sel_attr.static_time;
+	url += "&excep_attr_mask=" + da_sel_attr.excep_attr_mask;
+	url += "&value_type=" + da_sel_attr.value_type;
+	url += "&chart_type=" + da_sel_attr.chart_type;
+
+	var op = $.parseJSON('{"mask":true,"maxable":false,"height":440,"width":560}'); 
+	$.pdialog.open(url, "da_dlg_mod_attr", "修改监控点", op); 
+}
+
+function daDeleteAttr()
+{
+	if(da_sel_attr == "null")
+	{
+		alertMsg.info("请先点击监控点列表选择一个要删除的监控点");
+		return;
+	}
+
+	var msg="确认删除监控点：" + da_sel_attr.name + " (id:" + da_sel_attr.id + ") ?";
+	alertMsg.confirm(msg, {
+		okCall: function(){
+			var url = "<?cs var:config.cgipath?>mt_slog_attr?action=attr_delete"+"&id="+da_sel_attr.id;
+			$.get(url, function(data){
+					if(dmtFirstDealAjaxResponse(data))
+						return;
+
+					if(data.statusCode==200){
+						alertMsg.info("删除成功。");
+						return navTab.reload();
+					}
+					else
+						alertMsg.warn("删除失败！");
+				}, "json"); 
+			}
+		});
+	return;
+}
+
+function daClearSearch()
+{
+	$("#da_attr_data_type").val(0);
+	$('#da_excp_mask_id').css('display', 'none');
+	$("input[name=dam_attr_type]").val(0);
+	$("input[name=dam_attr_type_name]").val("");
+	$("input[name=da_keyword]").val("");
+	$('#dam_attr_static_time').val(0);
+	return false;
+}
+
+function daAddMultiNewAttr()
+{
+	var op = {"mask":true,"maxable":false,"height":510,"width":560};
+	$.pdialog.open("<?cs var:config.cgipath?>mt_slog_attr?action=init_add_multi_attr",
+		"da_dlg_add_multi_attr", "批量导入监控点", op); 
+}
+
+function daAddNewAttr()
+{
+	var url = "<?cs var:config.cgipath?>mt_slog_attr?action=add_attr";
+	var op = $.parseJSON('{"mask":true,"maxable":false,"height":400,"width":520}'); 
+	$.pdialog.open(url, "da_dlg_add_new_attr", "添加监控点", op); 
+}
+
+$(document).ready(function(){
+	var attr_info = daSetAttrList(da_attrinfo);
+	$("#da_attr_list_info").html(attr_info);
+
+	$("select[name=da_attr_data_type] option").each(function(){
+		<?cs if:config.da_attr_data_type ?>
+			if(this.value == <?cs var:config.da_attr_data_type ?>) {
+				$(this).attr("selected", true);
+			}
+		<?cs /if ?>
+	});
+
+	$("select[name=dam_attr_static_time] option").each(function(){
+		<?cs if:config.dam_attr_static_time ?>
+			if(this.value == <?cs var:config.dam_attr_static_time ?>) {
+				$(this).attr("selected", true);
+			}
+		<?cs /if ?>
+	});
+
+	$('#da_attr_data_type').change(function() {
+		var tp = $('#da_attr_data_type').val();
+		if(tp == '<?cs var:config.ex_report ?>')
+			$('#da_excp_mask_id').css('display', 'block');
+		else
+			$('#da_excp_mask_id').css('display', 'none');
+	});
+	$('#da_attr_data_type').change();
+
+	$("select[name=numPerPage] option").each(function(){
+		if(this.value == <?cs var:config.numPerPage ?>)
+			$(this).attr("selected", true);
+	});
+});
+
+</script>
+

@@ -1,0 +1,30 @@
+# mysql 头文件路径: ${MYSQL_INCLUDE}/mysql/mysql.h
+MYSQL_INCLUDE = /usr/include
+
+# mysql 库文件路径: ${MYSQL_LIB}/ libmysqlclient.so
+# 如该目录下不存在库, install_dev.sh 脚本会尝试探测
+MYSQL_LIB = /usr/lib64
+
+# 迁移云管系统公共库安装路径，请勿在路径后加空格, = 符号两边需要空格
+# 如自行指定位置, 请先创建相应目录, 否则 install_dev.sh 脚本会自动修改
+MTLIB_INCLUDE_PATH = /usr/include
+MTLIB_LIB_PATH = /usr/lib64
+
+# 迁移云管系统公共库是否使用动态链接方式
+#USE_DLL_COMM_LIB = yes
+USE_DLL_COMM_LIB = no
+
+# 编译库 - gcc/g++ 编译通用选项
+# - debug 模式编译库代码选项
+CFLAGS_LIB = -std=gnu90 -g -fPIC -fno-exceptions -Wall -Wsign-compare -Wno-strict-aliasing
+CXXFLAGS_LIB = -std=gnu++98 -g -fPIC -fexceptions -Wall -Wno-ctor-dtor-privacy -Wno-init-self -Wno-misleading-indentation
+# - release 模式编译库代码选项
+#CFLAGS_LIB = -O2 -fPIC -fno-exceptions -Wall -Wsign-compare -Wno-strict-aliasing
+#CXXFLAGS_LIB = -O2 -fPIC -fexceptions -Wno-ctor-dtor-privacy
+
+# 编译程序 - gcc/g++ 编译通用选项
+# - debug 模式编译程序选项 
+CXXFLAGS = -std=gnu++98 -g -Wall -Wno-ctor-dtor-privacy -Wsign-compare -Wno-init-self -Wno-misleading-indentation -lrt -Wl,-rpath=/home/mtreport/DES-PWE_lib
+# - release 模式编译程序选项
+#CXXFLAGS = -std=gnu++98 -O2 -Wall -Wsign-compare -Wno-ctor-dtor-privacy -Wno-init-self -Wno-misleading-indentation -lrt -Wl,-rpath=/hme/mtreport/DES-PWE_lib
+

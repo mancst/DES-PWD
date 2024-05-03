@@ -1,0 +1,240 @@
+<div class="pageHeader">
+	<form class="pagerForm" method="post" onsubmit="return navTabSearch(this);" action='<?cs var:config.cgipath?>mt_slog_showview?action=search_warn_list' >
+		<?cs include:config.cspath+"dmt_page_para.html" ?>
+		<input type="hidden" name="dwl_view_id_page" value="<?cs var:config.dwl_view_id ?>" />
+		<input type="hidden" name="dwl_machine_id_page" value="<?cs var:config.dwl_machine_id ?>" />
+		<input type="hidden" name="dwl_attr_id_page" value="<?cs var:config.dwl_attr_id ?>" />
+		<input type="hidden" name="dwl_warn_obj" value="<?cs var:config.dwl_warn_obj ?>" />
+		<input type="hidden" name="dwl_warn_type" value="<?cs var:config.dwl_warn_type ?>" />
+		<input type="hidden" name="dwl_deal_status" value="<?cs var:config.dwl_deal_status ?>" />
+	</form>
+	<form onsubmit="return dwlBfSubmit(this);" action="<?cs var:config.cgipath?>mt_slog_showview?action=search_warn_list" method='post'>
+		<div class="searchBar">
+			<ul class="searchContent" >
+				<li>
+					<label>处理状态:</label>
+					<select class="xrk_combox" name="dwl_deal_status_sel" id="dwl_deal_status_sel">
+						<option value="-1">全部</option>
+						<option value="0">未处理</option>
+						<option value="1">处理中</option>
+						<option value="2">处理完成</option>
+						<option value="3">已屏蔽</option>
+					</select>
+				</li>
+				<li>
+					<label>提示对象:</label>
+					<select class="xrk_combox" name="dwl_warn_obj_sel" id="dwl_warn_obj_sel">
+						<option value="0">全部</option>
+						<option value="8">单机提示</option>
+						<option value="16">视图提示</option>
+					</select>
+				</li>
+				<li>
+					<label>提示类型:</label>
+					<select class="xrk_combox" name="dwl_warn_type_sel" id="dwl_warn_type_sel">
+						<option value="0">全部</option>
+						<option value="1">最大值</option>
+						<option value="2">最小值</option>
+						<option value="4">波动值</option>
+						<option value="64">异常监控点</option>
+					</select>
+				</li>
+
+				<li>
+					<label>机器ID:</label><input type="text" name="dwl_machine_id" id="dwl_machine_id" size="8" value="<?cs var:config.dwl_machine_id?>" />
+					<label>视图ID:</label><input type="text" name="dwl_view_id" id="dwl_view_id" size="8" value="<?cs var:config.dwl_view_id?>" />
+					<label>监控点ID:</label><input type="text" name="dwl_attr_id" size="8" value="<?cs var:config.dwl_attr_id ?>" />
+				</li>
+			</ul>
+			<div class="subBar">
+				<ul>
+					<li><button type="submit" class="buttonActive"><i class='icon-search icon-large '></i>查找</button></li>
+					<li><button type="button" class="buttonActive" id="dml_btn_erase"><i class='icon-trash icon-large '></i>重置</button></li>
+				</ul>
+			</div>
+		</div>
+	</form>
+</div>
+		
+<div class="pageContent"> 
+	<div class="panelBar">
+		<ul class="toolBar">
+			<li><a href="#" onclick="return dwlDealMultiWarns(1);"><i class='icon-random'></i>批量处理提示</a></li>
+			<li class="line">line</li>
+			<li><a href="#" onclick="return dwlDealMultiWarns(2);"><i class='icon-check'></i>批量处理完成</a></li>
+			<li class="line">line</li>
+		</ul>
+	</div>
+	
+	<table class="list" width="100%" layoutH="0">
+		<thead> 
+			<tr> 
+				<th width="22" align='left'><input type="checkbox" group="warn_info_ids" class="checkboxCtrl"></th>
+				<th width="120" align='left'>最后提示时间</th>
+				<th width="240" align='left'>提示监控点</th>
+				<th width="360" align='left'>提示描述</th>
+				<th width="50" align='left'>触发次数</th>
+				<th width="120" align='left'>开始提示时间</th>
+				<th width="80" align='left'>处理状态</th>
+				<th width="80" align='left'>上报查看</th>
+			</tr>
+		</thead>
+		<tbody id="dwl_info_list">
+		</tbody>
+	</table>
+	<?cs include:config.cspath+"dmt_page.html" ?>
+</div>
+
+<script language="javascript" type="text/javascript">
+var dwl_warn_info = $.parseJSON('<?cs var:config.warn_info_list ?>');
+
+function dwlBfSubmit(fm)
+{
+	var mid = $('#dwl_machine_id').val();
+	var vid = $('#dwl_view_id').val();
+	var obj = $('#dwl_warn_obj_sel').val();
+	
+	if((mid != 0 && vid != 0) || (obj == 8 && vid != 0) || (obj == 16 && mid != 0))
+	{
+		alertMsg.info('查询条件非法，请重新输入');
+		return false;
+	}
+	return navTabSearch(fm);
+}
+
+function dwlSetWarnList(warninfo)
+{
+	var list = "";
+	var listwarn = warninfo.list;
+	for(var i=0,j=0; i < warninfo.count && i < listwarn.length; i++)
+	{
+		j = (<?cs var:config.currentPage ?>-1) * <?cs var:config.numPerPage ?> + 1;
+		list += "<tr>";
+		list += "<td><input name='warn_info_ids' value=";
+		list +=  listwarn[i].wid + " type='checkbox'></td>";
+
+		list += "<td>" + listwarn[i].last_warn_time + "</td>";
+		list += "<td><span class='xrk_show_txt_hs'>" + listwarn[i].attr_name +" 【" + listwarn[i].attr_id + "】</span></td>";
+
+		if(listwarn[i].warn_flag & 16)
+			list += "<td>视图【" + listwarn[i].warn_name + "】";
+		else 
+			list += "<td>单机【" + listwarn[i].warn_name + "】";
+
+		if((listwarn[i].warn_flag & 1) || (listwarn[i].warn_flag & 4))
+			list += "上报值:" + listwarn[i].warn_val+", 超过, 提示配置值:" + listwarn[i].warn_conf_val + "</td>";
+		else if(listwarn[i].warn_flag & 2)
+			list += "上报值:" + listwarn[i].warn_val+", 低于, 提示配置值:" + listwarn[i].warn_conf_val + "</td>";
+		else
+			list += "异常监控点值有上报</td>";
+
+		list += "<td>" + listwarn[i].warn_times + "</td>";
+		list += "<td>" + listwarn[i].warn_time + "</td>";
+
+		if(listwarn[i].deal_status == 0)
+			list += "<td><span class='xrk_warn_undeal'>未处理</span></td>";
+		else if(listwarn[i].deal_status == 1)
+			list += "<td><span class='xrk_warn_dealing'>处理中</span></td>";
+		else if(listwarn[i].deal_status == 2)
+			list += "<td><span class='xrk_warn_finish'>处理完成</span></td>";
+		else
+			list += "<td><span class='xrk_warn_mask'>已屏蔽</span></td>";
+	
+		// 24 = 16+8 (视图、单机提示)
+		if((listwarn[i].warn_flag & 24) && listwarn[i].warn_name != 'unknow')
+			list += "<td><a class='detail' href='#' onclick='dwlShowSingle("+i+");'>查看</a></td>";
+		else
+			list += "<td></td>";
+
+		list += "</tr>";
+	}
+	return list;
+}
+
+function dwlDealMultiWarns(wstatus)
+{
+	var sel_warns = "";
+	$("#dwl_info_list").find("input:checked").filter("[name='warn_info_ids']").each(function(i){
+		var val = $(this).val();
+		sel_warns += (i==0 ? val : ","+val);
+	});
+
+	if(sel_warns == "")
+	{
+		alertMsg.info("请选择要处理的提示");
+		return;
+	}
+
+	var url = "<?cs var:config.cgipath?>mt_slog_showview?action=deal_multi_warns";
+	url += "&warn_list=" + sel_warns;
+	url += "&to_status=" + wstatus;
+	ajaxTodo(url);
+}
+
+function dwlShowSingle(i)
+{
+	var listwarn = dwl_warn_info.list;
+	var type;
+	if(listwarn[i].warn_flag & 16)
+		type = 'view';
+	else if(listwarn[i].warn_flag & 8)
+		type = 'machine';
+	else {
+		alertWarn("未知提示类型");
+		return;
+	}
+	return dmtShowSingle(
+		listwarn[i].last_warn_time.substr(0, 10), 
+		listwarn[i].attr_name, 2, '<?cs var:config.cgipath?>', type, listwarn[i].warn_id, listwarn[i].attr_id);
+}
+
+$(document).ready(function(){
+	var warn_info = dwlSetWarnList(dwl_warn_info);
+	var warn_list = $("#dwl_info_list");
+	warn_list.html(warn_info);
+
+	$("#dml_btn_erase").click(function(){
+		$("input[name=dwl_machine_id]").val("");
+		$("input[name=dwl_view_id]").val("");
+		$("input[name=dwl_attr_id]").val("");
+		$("select[name=dwl_deal_status_sel]").val(-1);
+		$("#dwl_warn_type_sel").val(0);
+		$("select[name=dwl_warn_obj_sel]").val(0);
+		return false;
+	});
+
+	var checkStatus = '<?cs var:config.dwl_deal_status_sel ?>';
+	if(checkStatus != '')
+	{
+		$("select[name=dwl_deal_status_sel] option").each(function(){
+			if(this.value == checkStatus)
+				$(this).attr("selected", true);
+		});
+	}
+
+	<?cs if:config.dwl_warn_obj_sel ?>
+	$("select[name=dwl_warn_obj_sel] option").each(function(){
+		if(this.value == <?cs var:config.dwl_warn_obj_sel ?>)
+			$(this).attr("selected", true);
+	});
+	<?cs /if ?>
+
+	<?cs if:config.dwl_warn_type_sel ?>
+	$("select[name=dwl_warn_type_sel] option").each(function(){
+		if(this.value == <?cs var:config.dwl_warn_type_sel ?>)
+			$(this).attr("selected", true);
+	});
+	<?cs /if ?>
+
+	$("select[name=numPerPage] option").each(function(){
+		if(this.value == <?cs var:config.numPerPage ?>)
+			$(this).attr("selected", true);
+	});
+
+	if(<?cs var:config.check_lv2_vcode ?>+0 == 1) {
+		dmtPopLv2CodeDialog();
+	}
+});
+
+</script>
+

@@ -1,0 +1,260 @@
+<div class="pageContent">
+	<div class="panelBar panelBar_single">
+		<ul class="toolBar">
+			<li class="line">line</li>
+			<li>指定日期：<input type="text" class="date" size="10" readonly="true" id="dits_plugin_date_<?cs var:plugin_attr.id ?>" value="<?cs var:plugin_attr.cust_date ?>" onblur="setTimeout(ditsPluginOnCustDateChange_<?cs var:plugin_attr.id ?>, 600);" minDate="2014-01-01" maxDate="2088-12-31" /></li>
+
+			<li class="line">line</li>
+			<li><a class="add" href="#" onclick="return ditsPluginAttrShow_<?cs var:plugin_attr.id ?>(2);"><i class='icon-bar-chart icon-large'></i>日图</a></li>
+
+			<li class="line">line</li>
+			<li><a class="add" href="#" onclick="return ditsPluginAttrShow_<?cs var:plugin_attr.id ?>(1);"><i class='icon-area-chart icon-large'></i>日同比图</a></li>
+
+			<li class="line">line</li>
+			<li><a class="add" href="#" onclick="return ditsPluginAttrShow_<?cs var:plugin_attr.id ?>(3);"><i class='icon-area-chart icon-large'></i>周图</a></li>
+
+			<li class="line">line</li>
+			<li style='line-height:34px'>
+				<input type="checkbox" id="dits_plugin_not_show_zero_<?cs var:plugin_attr.id ?>"  checked onclick="return ditsPluginCheckShowZero_<?cs var:plugin_attr.id ?>();"/>
+				<label class='for' for='dits_plugin_not_show_zero_<?cs var:plugin_attr.id ?>'>图表不显示数据为0的点</label>
+			</li>
+			<li style="display:none"><a id="dits_href_<?cs var:plugin_attr.id ?>" href="#" target="navTab" rel="pluginattr_<?cs var:plugin_attr.id ?>" fresh="false"></a></li>
+
+			<li style='float:right;margin-right:20px'><a class="add" href="#" onclick="return ditsPluginLeftMenuShow_<?cs var:plugin_attr.id ?>();"><i class='icon-large' id='navi-show-icon_<?cs var:plugin_attr.id ?>'></i>图表导航</a></li>
+		</ul>
+	</div>
+
+	<div> 
+		<div id='ditsPluginLeftMenu_<?cs var:plugin_attr.id ?>' layoutH="28" class="chartLeftMenu chart_navi">
+            <div class="accordion" style='display:none'> 
+            	<div class="accordionHeader plugin_attr_use">
+            		<h2><i class="icon-plug icon-large "></i>插件【<?cs var:plugin.id ?>】-<?cs var:plugin.name ?><i class="icon icon-chevron-up"></i></h2>
+            	</div>
+            	<div class="accordionContent plugin_attr_use ">
+            		<ul class="tree extend" attrid="<?cs var:plugin_attr.id ?>"></ul>
+            	</div>
+           </div>
+		</div> 
+		<div layoutH="28" id="dits_ct_plugin_attr_show_list_<?cs var:plugin_attr.id ?>" class="unitBox xrk_chart_container"> 
+		</div>
+	</div>
+</div>
+
+<script language="javascript" type="text/javascript">
+
+var dits_plugin_name_<?cs var:plugin_attr.id ?> = "<?cs var:plugin.name ?>";
+var dits_plugin_attr_name_<?cs var:plugin_attr.id ?> = "<?cs var:plugin.attr_name ?>";
+var dits_plugin_machine_list_<?cs var:plugin_attr.id ?> = <?cs var:plugin.machines ?>;
+var dits_plugin_cust_date_save_<?cs var:plugin_attr.id ?> = '<?cs var:plugin_attr.cust_date ?>';
+var dits_plugin_attr_show_type_<?cs var:plugin_attr.id ?> = <?cs var:plugin_attr.show_type ?>;
+var dits_plugin_chart_ok_<?cs var:plugin_attr.id ?> = false;
+var dits_plugin_navi_menu_ok_<?cs var:plugin_attr.id ?> = false;
+var dits_plugin_rep_machines_<?cs var:plugin_attr.id ?> = '';
+
+function ditsPluginOnCustDateChange_<?cs var:plugin_attr.id ?>()
+{
+	var dt = $("#dits_plugin_date_<?cs var:plugin_attr.id ?>").val();
+	if(dt != dits_plugin_cust_date_save_<?cs var:plugin_attr.id ?>)
+		return ditsPluginAttrShow_<?cs var:plugin_attr.id ?>(dits_plugin_attr_show_type_<?cs var:plugin_attr.id ?>);
+}
+
+function ditsPluginSetMachines_<?cs var:plugin_attr.id ?>()
+{
+    var jsmachs = dits_plugin_machine_list_<?cs var:plugin_attr.id ?>;
+    for(var i=0; i < jsmachs.count && i < jsmachs.list.length; i++) {
+         dits_plugin_rep_machines_<?cs var:plugin_attr.id ?> += jsmachs.list[i].id + ' ';
+    }
+}
+
+function ditsPluginLeftMenuShow_<?cs var:plugin_attr.id ?>()
+{
+	if($('#ditsPluginLeftMenu_<?cs var:plugin_attr.id ?>').css('display') == 'none')
+	{
+        $('#navi-show-icon_<?cs var:plugin_attr.id ?>').removeClass('icon-double-angle-left').addClass('icon-double-angle-right');;
+		$('#ditsPluginLeftMenu_<?cs var:plugin_attr.id ?>').show();
+		window.localStorage.setItem('ditsPluginLeftMenu_<?cs var:plugin_attr.id ?>_hide', '0');
+		dmtRedrawCharts('<?cs var:plugin_attr.id ?>', 'pluginattr', true);
+	}
+	else
+	{
+        $('#navi-show-icon_<?cs var:plugin_attr.id ?>').addClass('icon-double-angle-left').removeClass('icon-double-angle-right');;
+		$('#ditsPluginLeftMenu_<?cs var:plugin_attr.id ?>').hide();
+		window.localStorage.setItem('ditsPluginLeftMenu_<?cs var:plugin_attr.id ?>_hide', '1');
+		dmtRedrawCharts('<?cs var:plugin_attr.id ?>', 'pluginattr', false);
+	}
+}
+
+function ditsPluginClickViewAttr_<?cs var:plugin_attr.id ?>(show_id)
+{
+	// 寻找该图表的数组索引
+	var arrStr = show_id.split('_');
+	var i = 0;
+	for(; i < dits_plugin_machine_list_<?cs var:plugin_attr.id ?>.length; i++)
+	{
+		if(arrStr[1] == dits_plugin_machine_list_<?cs var:plugin_attr.id ?>[i])
+			break;
+	}
+
+	// 没找到非法 attr
+	if(i >= dits_plugin_machine_list_<?cs var:plugin_attr.id ?>.length)
+		return false;
+
+	//if(i < dits_plugin_attr_show_index_cur_<?cs var:plugin_attr.id ?>)
+	return false;
+
+	// 正在获取中的 attr
+	return true;
+}
+
+function ditsPluginAttrShow_<?cs var:plugin_attr.id ?>(type)
+{
+	var dt = $("#dits_plugin_date_<?cs var:plugin_attr.id ?>").val();
+	if(dt != "")
+		param = '&cust_date=' + dt;
+	else
+		param = "&cust_date=today" 
+	param += '&show_rep=1';
+	param += '&_r=' + Math.random();
+	param += '&plugin_id=' + '<?cs var:plugin.id ?>';
+	param += '&attr_id=' + '<?cs var:plugin_attr.id ?>';
+	param += '&type=' + type;
+	param += '&plugin_name=' + '<?cs var:plugin.name ?>';
+
+	var requrl = "<?cs var:config.cgipath ?>mt_slog_showview?action=show_plugin_single_attr" + param;
+	var idhref = "#dits_href_<?cs var:plugin_attr.id ?>";
+	$(idhref).html(dits_plugin_name_<?cs var:plugin_attr.id ?>);
+	$(idhref).attr('href', requrl);
+	$(idhref).click();
+	return false;
+}
+
+function ditsPluginCheckShowZero_<?cs var:plugin_attr.id ?>()
+{
+	var ckName = "local_plugin_dits_plugin_not_show_zero_<?cs var:plugin_attr.id ?>";
+	var ck = $("#dits_plugin_not_show_zero_<?cs var:plugin_attr.id ?>").is(":checked");
+	if(ck)
+		window.localStorage.setItem(ckName, '1');
+	else
+		window.localStorage.setItem(ckName, '0');
+	return ditsPluginAttrShow_<?cs var:plugin_attr.id ?>(<?cs var:plugin_attr.show_type ?>);
+}
+
+function ditsGetPluginSingleAttrInfo_<?cs var:plugin_attr.id ?>()
+{
+	var requrl = "<?cs var:config.cgipath?>mt_slog_showview";
+	var reqpara = {};
+
+	reqpara.type_id = <?cs var:plugin.id ?>;
+	reqpara.show_single_type = <?cs var:plugin_attr.show_type ?>;
+	reqpara.action = 'show_single_attr_cust';
+	reqpara.show_type = 'pluginattr';
+	reqpara.attr_list = <?cs var:plugin_attr.id ?>;
+    reqpara.rep_machines = dits_plugin_rep_machines_<?cs var:plugin_attr.id ?>;
+
+    var notShowZero = window.localStorage.getItem("local_plugin_dits_plugin_not_show_zero_<?cs var:plugin_attr.id ?>");
+    if(notShowZero === '1')
+        reqpara.show_zero = 0;
+    else if(notShowZero === '0')
+        reqpara.show_zero = 1;
+    else
+        reqpara.show_zero = 0;
+	var dt = $("#dits_plugin_date_<?cs var:plugin_attr.id ?>").val();
+	if(dt != "")
+		reqpara.date = dt;
+	else
+		reqpara.date = 'today';
+	reqpara._r = Math.random();
+
+	ajaxTodoPost(requrl, reqpara, function(json) {
+		if(dmtFirstDealAjaxResponse(json))
+			return;
+
+		if(json.statusCode == DWZ.statusCode.success || json.statusCode == DWZ.statusCode.ok)
+		{
+			dmtShowPluginAttrInfo(json, "#dits_ct_plugin_attr_show_list_<?cs var:plugin_attr.id ?>");
+		}
+		else if(json.msgid && alertMsg)
+		{
+			var msg = DWZ.msg(json.msgid);
+			alertMsg.warn(msg);
+		}
+		else if(json.msg)
+			alertMsg.warn(json.msg);
+	});
+}
+
+function ditsPluginSetNaviMenuInfo_<?cs var:plugin_attr.id ?>()
+{
+    // 汇总图
+    var list = '';
+    var attr_show_id = "attr_0_<?cs var:plugin_attr.id ?>pluginattr";
+    list += "<li>";
+    list += "<a onclick=\"dmtJumpToAttrPic('";
+    list += attr_show_id + "', '#dits_ct_plugin_attr_show_list_<?cs var:plugin_attr.id ?>', ";
+    list += ditsPluginClickViewAttr_<?cs var:plugin_attr.id ?> + ")\" href='#' ctid='" + attr_show_id + "'>";
+    list += '汇总图【<?cs var:plugin_attr.id ?>】<?cs var:plugin.attr_name ?>';
+    list += "</a>";
+    list += "</li>";
+    $('#ditsPluginLeftMenu_<?cs var:plugin_attr.id ?> ul[attrid="<?cs var:plugin_attr.id ?>"]').append(list);
+
+    var listmach = dits_plugin_machine_list_<?cs var:plugin_attr.id ?>.list;
+    for(var j=0; j < dits_plugin_machine_list_<?cs var:plugin_attr.id ?>.count && j < listmach.length; j++) 
+    {
+        var list = '';
+        var attr_show_id = "attr_" + listmach[j].id + "_<?cs var:plugin_attr.id ?>pluginattr";
+        list += "<li>";
+        list += "<a onclick=\"dmtJumpToAttrPic('";
+        list += attr_show_id + "', '#dits_ct_plugin_attr_show_list_<?cs var:plugin_attr.id ?>', ";
+        list += ditsPluginClickViewAttr_<?cs var:plugin_attr.id ?> + ")\" href='#' ctid='" + attr_show_id + "'>";
+        if(listmach[j].name != listmach[j].ip1)
+            list += '上报机器【'+listmach[j].id+'】'+listmach[j].name + '(' + listmach[j].ip1 + ')';
+        else
+            list += '上报机器【'+listmach[j].id+'】'+listmach[j].name;
+        list += "</a>";
+        list += "</li>";
+        $('#ditsPluginLeftMenu_<?cs var:plugin_attr.id ?> ul[attrid="<?cs var:plugin_attr.id ?>"]').append(list);
+    }
+
+    $('#ditsPluginLeftMenu_<?cs var:plugin_attr.id ?> .accordion').show();
+    if(dits_plugin_chart_ok_<?cs var:plugin_attr.id ?>)
+        dmtAddNoDataTextForView('ditsPluginLeftMenu_<?cs var:plugin_attr.id ?>');
+    dits_plugin_navi_menu_ok_<?cs var:plugin_attr.id ?> = true;
+}
+
+$(document).ready(function(){
+	var notShowZero = window.localStorage.getItem("local_plugin_dits_plugin_not_show_zero_<?cs var:plugin_attr.id ?>");
+	if(notShowZero === '1')
+	    $("#dits_plugin_not_show_zero_<?cs var:plugin_attr.id ?>").prop('checked', true);
+	else if(notShowZero === '0')
+	    $("#dits_plugin_not_show_zero_<?cs var:plugin_attr.id ?>").prop('checked', false);
+
+	$('#dits_ct_plugin_attr_show_list_<?cs var:plugin_attr.id ?>').html('');
+	var hideLeft = window.localStorage.getItem("ditsPluginLeftMenu_<?cs var:plugin_attr.id ?>_hide");
+    if(hideLeft === '1') {
+		$('#ditsPluginLeftMenu_<?cs var:plugin_attr.id ?>').hide();
+        $('#navi-show-icon_<?cs var:plugin_attr.id ?>').addClass('icon-double-angle-left');
+	    dmtSetRedrawChartsInfo('<?cs var:plugin_attr.id ?>', 'pluginattr', false);
+    }
+    else if(hideLeft === '0') {
+        $('#navi-show-icon_<?cs var:plugin_attr.id ?>').addClass('icon-double-angle-right');
+	    dmtSetRedrawChartsInfo('<?cs var:plugin_attr.id ?>', 'pluginattr', true);
+    }
+    else {
+        if(dits_plugin_machine_list_<?cs var:plugin_attr.id ?>.count <= 10) {
+            $('#ditsPluginLeftMenu_<?cs var:plugin_attr.id ?>').hide();
+            $('#navi-show-icon_<?cs var:plugin_attr.id ?>').addClass('icon-double-angle-left');
+	        dmtSetRedrawChartsInfo('<?cs var:plugin_attr.id ?>', 'pluginattr', false);
+        }
+        else {
+            $('#navi-show-icon_<?cs var:plugin_attr.id ?>').addClass('icon-double-angle-right');
+	        dmtSetRedrawChartsInfo('<?cs var:plugin_attr.id ?>', 'pluginattr', true);
+        }
+    }
+	dmtSetChartSize();
+    ditsPluginSetMachines_<?cs var:plugin_attr.id ?>();
+    ditsPluginSetNaviMenuInfo_<?cs var:plugin_attr.id ?>();
+    ditsGetPluginSingleAttrInfo_<?cs var:plugin_attr.id ?>();
+});
+
+</script>
+

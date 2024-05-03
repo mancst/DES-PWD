@@ -1,0 +1,259 @@
+<style type="text/css">
+#dam_pageFormContent label { float:left; overflow:visible; width:85px; padding:0 5px; line-height:21px;}
+#dam_pageFormContent p { width:500px;} 
+</style>
+
+<div class="pageContent">
+	<form method="get" action="<?cs var:config.cgipath?>mt_slog_attr" class="pageForm" id="dam_form_submit">
+		<div class="pageFormContent" layoutH="56" id='dam_pageFormContent'>
+			<?cs if:config.action=="save_mod_attr" ?>
+			<input type="hidden" name="dam_call_back_type" value="closeCurrent" />
+			<?cs else ?>
+			<input type="hidden" name="dam_call_back_type" value="noCloseCurrent" />
+			<?cs /if ?>
+			<input type="hidden" name="dam_reload_navTab_id" value="dmt_attr" />
+			<input type="hidden" name="dam_attr_type" value="<?cs var:config.attr_type_id ?>" />
+			<input type="hidden" name="dam_attr_id" value="<?cs var:config.attr_id ?>" />
+			<input type="hidden" name="action" value="<?cs var:config.action ?>" />
+			<p>
+				<label>监控点类型：</label>
+				<input type="text" size="20" name="dam_attr_type_name" value="<?cs var:config.attr_type_name ?>" class="required" />
+				<a class="btnLook" href="<?cs var:config.cgipath ?>mt_slog_attr?action=lookUpAttrType4Add" title="监控点类型选择" lookupGroup="" ></a>
+			</p>
+			<p id='dam_data_type'>
+				<label>数据类型：</label>
+				<select class="combox" name="dam_new_attr_data_type" id="dam_new_attr_data_type">
+					<option value="<?cs var:config.sum_report_m ?>">累计量</option>
+					<option value="<?cs var:config.sum_report_his ?>">历史累计量</option>
+					<option value="<?cs var:config.sum_report_min ?>">取上报最小值</option>
+					<option value="<?cs var:config.sum_report_max ?>">取上报最大值</option>
+					<option value="<?cs var:config.ex_report ?>">异常量</option>
+					<option value="<?cs var:config.str_report_d ?>">字符串型</option>
+					<option value="<?cs var:config.str_report_d_ip ?>">字符串型-IP省级</option>
+					<option value="<?cs var:config.data_use_last ?>">取最新上报值</option>
+				</select>
+				<font class="note-text" id='dam_attr_type_note_txt' style='display:block'>
+					<label style="float:right;width:300px;">对一分钟内的上报进行累加统计</label>
+				</font>
+			</p>
+            <p>
+				<label>统计周期：</label>
+                <?cs if:config.action=="save_mod_attr" ?>
+				<select class="xrk_combox" name="dam_new_attr_static_time" id="dam_new_attr_static_time">
+                <?cs else ?>
+				<select class="combox" name="dam_new_attr_static_time" id="dam_new_attr_static_time">
+                <?cs /if ?>
+					<option value="1" selected>1分钟</option>
+					<option value="5">5分钟</option>
+					<option value="10">10分钟</option>
+					<option value="15">15分钟</option>
+					<option value="30">30分钟</option>
+					<option value="60">1小时</option>
+					<option value="120">2小时</option>
+					<option value="180">3小时</option>
+				</select>
+				<font class="note-text" style='display:block'>
+					<label style="float:right;width:300px;">同周期内的数据，在图表展示时绘制一个点</label>
+				</font>
+			</p>
+	
+			<p>
+				<label>监控点名称：</label>
+				<input type="text" name="dam_new_attr_name" id="dam_new_attr_name" class="required" value="<?cs var:config.attr_name ?>" />
+			</p>
+			<p>
+				<label>监控点描述：</label>
+				<input type="text" name="dam_new_attr_desc" value="<?cs var:config.attr_desc ?>" />
+			</p>
+
+			<p id='dam_excep' style='display:none'>
+				<label>屏蔽异常提示：</label>
+				<?cs if:config.excep_attr_mask == 1 ?>
+				<input type="checkbox" name="dam_excep_attr_mask" id="dam_excep_attr_mask" checked>
+				<?cs else ?>
+				<input type="checkbox" name="dam_excep_attr_mask" id="dam_excep_attr_mask">
+				<?cs /if ?>
+				<font class="note-text">
+					<label class='for' style="float:right;width:350px;" for="dam_excep_attr_mask">
+						屏蔽该异常监控点的提示
+					</label>
+				</font>
+			</p>
+
+			<p>
+				<font style="margin-left:120px;margin-top:10px;font-size:16px; color:blue; cursor:pointer;" onclick='damShowAdvConfig();'>
+					&gt;&gt;&gt;&nbsp;高级选项&nbsp;&lt;&lt;&lt;
+				</font>
+			</p>
+
+			<div id='dam_adv_config_item' style='display:none'>
+            <p>
+				<label>监控点值类型：</label>
+                <select class="xrk_combox" name="dam_attr_val_type" id="dam_attr_val_type">
+                    <option value="0">普通数值</option>
+                    <option value="1">百分数</option>
+                    <option value="2">除100后取两位小数</option>
+                    <option value="3">乘1024</option>
+                </select>
+				<font class="note-text" id='dam_attr_val_type_note_txt' style='display:block'>
+					<label style="float:right;width:250px;"></label>
+				</font>
+			</p>
+
+            <p>
+				<label>绘制图表类型：</label>
+                <select class="xrk_combox" name="dam_attr_chart_type" id="dam_attr_chart_type">
+                    <option value="0">曲线图</option>
+                    <option value="1">面积图</option>
+                    <option value="6">柱状图</option>
+                    <option value="12">饼图</option>
+                    <option value="18">散点图</option>
+                    <option value="24">地理图</option>
+                    <option value="30">关系图</option>
+                    <option value="36">树图</option>
+                    <option value="42">矩形树图</option>
+                    <option value="48">漏斗图</option>
+                    <option value="54">仪表盘</option>
+                </select>
+				<font class="note-text" id='dam_attr_chart_type_note_txt' style='display:block'>
+					<label style="float:right;width:310px;">默认绘制的图表类型，对暂不支持的类型绘制为曲线图</label>
+				</font>
+			</p>
+
+            </div>
+
+
+			<p id='dam_show_opr_msg' style='display:none'>
+				<font color='blue' style="padding-left:100px"></font>
+			</p>
+		</div>
+		<div class="formBar">
+			<ul>
+				<li><button type="submit" class="buttonActive"><?cs if:config.action=="save_mod_attr" ?>修改<?cs else ?>新增<?cs /if ?></button></li>
+				<li><button type="button" class="buttonActive close">关闭</button></li>
+			</ul>
+		</div>
+	</form>
+</div>
+
+<script language="javascript" type="text/javascript">
+function damShowAdvConfig()
+{
+    if($('#dam_adv_config_item').css('display') == 'block')
+        $('#dam_adv_config_item').css('display', 'none');
+    else
+        $('#dam_adv_config_item').css('display', 'block');
+}
+
+$(document).ready(function(){
+	$("#dam_attr_val_type").change(function(){
+		var tp = $('#dam_attr_val_type').val();
+        switch(tp) {
+            case '0':
+                $('#dam_attr_val_type_note_txt label').text('普通的数值类型，默认为该类型');
+                break;
+            case '1':
+                $('#dam_attr_val_type_note_txt label').text('取值范围为0%-100%之间的百分数');
+                break;
+            case '2':
+                $('#dam_attr_val_type_note_txt label').text('需对值除以100后取两位小数');
+                break;
+            case '3':
+                $('#dam_attr_val_type_note_txt label').text('需对值乘以1024');
+                break;
+            default:
+                $('#dam_attr_val_type_note_txt label').text('未知类型:'+tp);
+                break;
+        }
+    });
+
+	$("#dam_new_attr_data_type").change(function(){
+		var tp = $('#dam_new_attr_data_type').val();
+		switch(tp) {
+			case '<?cs var:config.sum_report_m ?>':
+				$('#dam_data_type').css('height', '21px');
+				$('#dam_attr_type_note_txt label').css('width', '310px').text('对一分钟内的上报进行累加统计');
+				$('#dam_excep').css('display', 'none');
+				$('#dam_show_opr_msg').css('display', 'none').css('margin-top', '40px');
+				break;
+
+			case '<?cs var:config.sum_report_his ?>':
+				$('#dam_data_type').css('height', '21px');
+				$('#dam_attr_type_note_txt label').css('width', '280px').text('按历史上报累计，即最新的上报值为历史上报值之和');
+				$('#dam_excep').css('display', 'none');
+				$('#dam_show_opr_msg').css('display', 'none').css('margin-top', '40px');
+				break;
+
+			case '<?cs var:config.sum_report_min ?>':
+				$('#dam_data_type').css('height', '21px');
+				$('#dam_attr_type_note_txt label').css('width', '270px').text('取每分钟内的上报最小值作为统计数据');
+				$('#dam_excep').css('display', 'none');
+				$('#dam_show_opr_msg').css('display', 'none').css('margin-top', '40px');
+				break;
+
+			case '<?cs var:config.sum_report_max ?>':
+				$('#dam_data_type').css('height', '21px');
+				$('#dam_attr_type_note_txt label').css('width', '270px').text('取每分钟内的上报最大值作为统计数据');
+				$('#dam_excep').css('display', 'none');
+				$('#dam_show_opr_msg').css('display', 'none').css('margin-top', '40px');
+				break;
+
+			case '<?cs var:config.ex_report ?>':
+				$('#dam_data_type').css('height', '21px');
+				$('#dam_attr_type_note_txt label').css('width', '310px').text('收到该监控点上报时视为系统异常，发出异常提示');
+				$('#dam_excep').css('display', 'block');
+				$('#dam_show_opr_msg').css('display', 'none').css('margin-top', '20px');
+				break;
+			case '<?cs var:config.str_report_d ?>':
+				$('#dam_data_type').css('height', '21px');
+				$('#dam_attr_type_note_txt label').css('width', '300px').text('按天累计各字符串的上报数值，生成一张饼图');
+				$('#dam_excep').css('display', 'none');
+				$('#dam_show_opr_msg').css('display', 'none').css('margin-top', '2px');
+				break;
+			case '<?cs var:config.str_report_d_ip ?>':
+				$('#dam_data_type').css('height', '21px');
+				$('#dam_attr_type_note_txt label').css('width', '260px').text('按天累计字符串为IP地址');
+				$('#dam_excep').css('display', 'none');
+				$('#dam_show_opr_msg').css('display', 'none').css('margin-top', '2px');
+				break;
+
+			case '<?cs var:config.data_use_last ?>':
+				$('#dam_data_type').css('height', '21px');
+				$('#dam_attr_type_note_txt label').css('width', '250px').text('取最新上报值');
+				$('#dam_excep').css('display', 'none');
+				$('#dam_show_opr_msg').css('display', 'none').css('margin-top', '2px');
+                break;
+
+			default:
+				$('#dam_attr_type_note_txt label').css('width', '270px').text('脚本错误！');			
+				break;
+		}
+	});
+
+    $("#dam_attr_chart_type").val('<?cs var:config.chart_type ?>');
+	$("#dam_attr_val_type").val('<?cs var:config.value_type ?>').change();
+	$("#dam_new_attr_data_type").val('<?cs var:config.attr_data_type ?>').change();
+	<?cs if:config.action=="save_mod_attr" ?>
+    $('#dam_new_attr_static_time').val(<?cs var:config.static_time ?>);
+    <?cs /if ?>
+
+	$("#dam_form_submit").submit(function(){
+		$('#dam_show_opr_msg').css('display', 'none');
+		validateCallback(this, function(js) {
+			<?cs if:config.action!="save_mod_attr" ?>
+			if(js.statusCode == 200) {
+                $('#dam_adv_config_item').css('display', 'none');
+				$('#dam_show_opr_msg').css('display', 'block');
+				$('#dam_show_opr_msg font').text('添加成功，新监控点 ID 为：'+js.attrId+'，您可以继续添加');
+			}
+			<?cs /if ?>
+			dialogAjaxDone(js);
+		});
+		return false;
+	});
+	$("#dam_new_attr_name").focus();
+});
+
+</script>
+
+

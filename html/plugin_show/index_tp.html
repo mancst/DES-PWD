@@ -1,0 +1,407 @@
+<div class="pageContent">
+	<div class="panelBar panelBar_single">
+		<ul class="toolBar">
+			<li class="line">line</li>
+			<li>指定日期：<input type="text" class="date" size="10" readonly="true" id="ds_plugin_date_<?cs var:plugin.id ?>" value="<?cs var:config.cust_date ?>" onblur="setTimeout(dsPluginOnCustDateChange_<?cs var:plugin.id ?>, 600);" minDate="2014-01-01" maxDate="2088-12-31" /></li>
+
+			<li class="line">line</li>
+			<li>
+				<label>上报机器:</label>
+				<select class='xrk_combox' name="ds_plugin_sel_machine_<?cs var:plugin.id ?>" onchange='dsPluginOnMachineChange_<?cs var:plugin.id ?>();' id="ds_plugin_sel_machine_<?cs var:plugin.id ?>">
+					<option value="0"> - 合并汇总 - </option>
+				</select>
+			</li>
+			<li class="line">line</li>
+	
+			<li><a class="add" href="#" onclick="return dsPluginAttrShow_<?cs var:plugin.id ?>(2);"><i class='icon-bar-chart icon-large'></i>日图</a></li>
+
+			<li class="line">line</li>
+			<li><a class="add" href="#" onclick="return dsPluginAttrShow_<?cs var:plugin.id ?>(1);"><i class='icon-area-chart icon-large'></i>日同比图</a></li>
+
+			<li class="line">line</li>
+			<li><a class="add" href="#" onclick="return dsPluginAttrShow_<?cs var:plugin.id ?>(3);"><i class='icon-area-chart icon-large'></i>周图</a></li>
+
+			<li class="line">line</li>
+			<li style='line-height:34px'>
+				<input type="checkbox" id="ds_plugin_not_show_zero_<?cs var:plugin.id ?>"  checked onclick="return dsPluginCheckShowZero_<?cs var:plugin.id ?>();"/>
+				<label class='for' for='ds_plugin_not_show_zero_<?cs var:plugin.id ?>'>图表不显示数据为0的点</label>
+			</li>
+			<li class='xrk_text_button' style='float:right;' id='ds_plugin_show_table_<?cs var:plugin.id ?>'><a title='插件实时表格' href="#" target='navTab' rel='dmt_plugin_show_table_<?cs var:plugin.id ?>'><i class='icon-table icon-large'></i>实时表格</a></li>
+			<li style="display:none"><a id="ds_plugin_href_<?cs var:plugin.id ?>" href="#" target="navTab" rel="pluginview_<?cs var:plugin.id ?>" fresh="false"></a></li>
+
+			<li class='xrk_text_button' style='float:right;margin-right:5px'><a class="add" href="#" onclick="return dsPluginLeftMenuShow_<?cs var:plugin.id ?>();"><i class='icon-large' id='navi-show-icon_<?cs var:plugin.id ?>'></i>图表导航</a></li>
+		</ul>
+	</div>
+
+	<div> 
+		<div id='dsPluginLeftMenu_<?cs var:plugin.id ?>' layoutH="28" class="chartLeftMenu chart_navi">
+            <div class="accordion" style='display:none'> 
+            	<div class="accordionHeader plugin_attr_use">
+            		<h2><i class="icon-plug icon-large "></i><span class='navi_chart_text'>插件【<?cs var:plugin.id ?>】-<?cs var:plugin.show_name ?></span><i class="icon icon-chevron-up"></i></h2>
+            	</div>
+            	<div class="accordionContent plugin_attr_use navi_attr_type_sub">
+            		<ul class="tree extend"></ul>
+            	</div>
+           </div>
+		</div> 
+		<div layoutH="28" id="ds_ct_plugin_attr_show_list_<?cs var:plugin.id ?>" class="unitBox xrk_chart_container"> 
+		</div>
+	</div>
+</div>
+
+<script language="javascript" type="text/javascript">
+
+var ds_plugin_name_<?cs var:plugin.id ?> = "<?cs var:plugin.show_name ?>";
+var ds_plugin_attr_show_get_last_seq_<?cs var:plugin.id ?> = <?cs var:config.last_seq ?>;
+var ds_plugin_attr_list_arry_<?cs var:plugin.id ?> = new Array();
+var ds_plugin_attr_list_<?cs var:plugin.id ?> = <?cs var:config.plugin_attr_list ?>;
+var ds_plugin_attr_show_index_cur_<?cs var:plugin.id ?> = 0;
+var ds_plugin_attr_show_get_auto_<?cs var:plugin.id ?> = null;
+var ds_plugin_attr_show_type_<?cs var:plugin.id ?> = <?cs var:config.show_type ?>;
+var ds_plugin_cust_date_save_<?cs var:plugin.id ?> = '<?cs var:config.cust_date ?>';
+var ds_plugin_attr_show_process_<?cs var:plugin.id ?> = false;
+var ds_plugin_attr_show_reqstart_timestamp_<?cs var:plugin.id ?> = new Date().getTime();
+var ds_plugin_rep_machines_<?cs var:plugin.id ?> = '';
+var ds_plugin_navi_menu_ok_<?cs var:plugin.id ?> = false; 
+var ds_plugin_chart_ok_<?cs var:plugin.id ?> = false;
+
+function dsPluginOnCustDateChange_<?cs var:plugin.id ?>()
+{
+	var dt = $("#ds_plugin_date_<?cs var:plugin.id ?>").val();
+	if(dt != ds_plugin_cust_date_save_<?cs var:plugin.id ?>)
+		return dsPluginAttrShow_<?cs var:plugin.id ?>(ds_plugin_attr_show_type_<?cs var:plugin.id ?>);
+}
+
+function dsPluginOnMachineChange_<?cs var:plugin.id ?>()
+{
+    var hisMach = window.localStorage.getItem('ds_plugin_<?cs var:plugin.id ?>_sel_mach');
+    if($('#ds_plugin_sel_machine_<?cs var:plugin.id ?>').val() != hisMach) {
+        hisMach = $('#ds_plugin_sel_machine_<?cs var:plugin.id ?>').val();
+        window.localStorage.setItem('ds_plugin_<?cs var:plugin.id ?>_sel_mach', hisMach);
+    }
+
+    if(hisMach != 0 && <?cs var:plugin.has_realtime_table ?>) {
+        var opsel = $('#ds_plugin_sel_machine_<?cs var:plugin.id ?>').find("option:selected");
+        $('#ds_plugin_show_table_<?cs var:plugin.id ?> a').attr('href',
+            '<?cs var:config.cgipath ?>mt_slog?action=plugin_show_tables&plugin=<?cs var:plugin.id ?>&machine='
+            + opsel.attr('machine'));
+    }
+	return dsPluginAttrShow_<?cs var:plugin.id ?>(ds_plugin_attr_show_type_<?cs var:plugin.id ?>);
+}
+
+function dsPluginLeftMenuShow_<?cs var:plugin.id ?>()
+{
+	if($('#dsPluginLeftMenu_<?cs var:plugin.id ?>').css('display') == 'none')
+	{
+        $('#navi-show-icon_<?cs var:plugin.id ?>').removeClass('icon-double-angle-left').addClass('icon-double-angle-right');;
+		$('#dsPluginLeftMenu_<?cs var:plugin.id ?>').show();
+		window.localStorage.setItem('dsPluginLeftMenu_<?cs var:plugin.id ?>_hide', '0');
+		dmtRedrawCharts('<?cs var:plugin.id ?>', 'pluginview', true);
+	}
+	else
+	{
+        $('#navi-show-icon_<?cs var:plugin.id ?>').addClass('icon-double-angle-left').removeClass('icon-double-angle-right');;
+		$('#dsPluginLeftMenu_<?cs var:plugin.id ?>').hide();
+		window.localStorage.setItem('dsPluginLeftMenu_<?cs var:plugin.id ?>_hide', '1');
+		dmtRedrawCharts('<?cs var:plugin.id ?>', 'pluginview', false);
+	}
+}
+
+function dsPluginClickViewAttr_<?cs var:plugin.id ?>(show_id)
+{
+	// 寻找该图表的数组索引
+	var arrStr = show_id.split('_');
+	var i = 0;
+	for(; i < ds_plugin_attr_list_arry_<?cs var:plugin.id ?>.length; i++)
+	{
+		if(arrStr[1] == ds_plugin_attr_list_arry_<?cs var:plugin.id ?>[i])
+			break;
+	}
+
+	// 没找到非法 attr
+	if(i >= ds_plugin_attr_list_arry_<?cs var:plugin.id ?>.length)
+		return false;
+
+	// 已获取到的 attr, 没有数据上报
+	if(i < ds_plugin_attr_show_index_cur_<?cs var:plugin.id ?>)
+		return false;
+
+	// 正在获取中的 attr
+	return true;
+}
+
+function dsPluginAttrShow_<?cs var:plugin.id ?>(type)
+{
+	var dt = $("#ds_plugin_date_<?cs var:plugin.id ?>").val();
+	if(dt != "")
+		param = '&date=' + dt;
+	else
+		param = "&date=today" 
+	param += '&show_rep=1';
+	
+	var ck = $("#ds_plugin_not_show_zero_<?cs var:plugin.id ?>").is(":checked");
+	if(ck)
+		param += '&show_zero=0';
+    else
+		param += '&show_zero=1';
+
+	param += '&_r=' + Math.random();
+	param += '&plugin_id=' + '<?cs var:plugin.id ?>';
+	param += '&type=' + type;
+	param += '&plugin_name=' + '<?cs var:plugin.show_name ?>';
+
+	var requrl = "<?cs var:config.cgipath ?>mt_slog?action=plugin_view_list" + param;
+	var idhref = "#ds_plugin_href_<?cs var:plugin.id ?>";
+	$(idhref).html(ds_plugin_name_<?cs var:plugin.id ?>);
+	$(idhref).attr('href', requrl);
+	$(idhref).click();
+	return false;
+}
+
+function dsPluginCheckShowZero_<?cs var:plugin.id ?>()
+{
+	var ckName = "local_plugin_ds_plugin_not_show_zero_<?cs var:plugin.id ?>";
+	var ck = $("#ds_plugin_not_show_zero_<?cs var:plugin.id ?>").is(":checked");
+	if(ck)
+		window.localStorage.setItem(ckName, '1');
+	else
+		window.localStorage.setItem(ckName, '0');
+	return dsPluginAttrShow_<?cs var:plugin.id ?>(ds_plugin_attr_show_type_<?cs var:plugin.id ?>);
+}
+
+function dsPluginSetNaviMenuInfo_<?cs var:plugin.id ?>(js)
+{
+    var ary_attr_types = dmtGetAttrTypeList(ds_plugin_attr_list_<?cs var:plugin.id ?>);
+
+    // 生成插件监控点类型信息
+    dmtSetChartNavigatioInfo(
+        ary_attr_types, js, 'dsPluginLeftMenu_<?cs var:plugin.id ?> .plugin_attr_use');
+
+    var listattr = ds_plugin_attr_list_<?cs var:plugin.id ?>.list;
+    for(var j=0; j < ds_plugin_attr_list_<?cs var:plugin.id ?>.count && j < listattr.length; j++) 
+    {
+        var list = '';
+        var attr_show_id = "attr_" + listattr[j].id + "_<?cs var:plugin.id ?>pluginview";
+        list += "<li>";
+        list += "<a onclick=\"dmtJumpToAttrPic('";
+        list += attr_show_id + "', '#ds_ct_plugin_attr_show_list_<?cs var:plugin.id ?>', ";
+        list += dsPluginClickViewAttr_<?cs var:plugin.id ?> + ")\" href='#' ctid='" + attr_show_id + "'>";
+        list += '【'+listattr[j].id+'】'+listattr[j].name;
+        list += "</a>";
+        list += "</li>";
+        $('#dsPluginLeftMenu_<?cs var:plugin.id ?> ul[attr_type="' + listattr[j].attr_type + '"').append(list);
+    }
+    $('#dsPluginLeftMenu_<?cs var:plugin.id ?>').initUI();
+    $('#dsPluginLeftMenu_<?cs var:plugin.id ?> .accordion').show();
+    if(ds_plugin_chart_ok_<?cs var:plugin.id ?>)
+        dmtAddNoDataTextForView(
+            'dsPluginLeftMenu_<?cs var:plugin.id ?>', 'ds_ct_plugin_attr_show_list_<?cs var:plugin.id ?>');
+    ds_plugin_navi_menu_ok_<?cs var:plugin.id ?> = true;
+}
+
+function dsPluginGetAttrTypeInfo_<?cs var:plugin.id ?>()
+{
+    var rurl = '<?cs var:config.cgipath?>mt_slog_attr?action=get_plugin_attr_type_for_chart';
+    rurl += '&plugin_root_attr_type=<?cs var:plugin.root_attr_type_id ?>';
+    rurl += '&plugin_id=<?cs var:plugin.id ?>';
+    $.ajax({
+        type: "get",
+        url: rurl,
+        success: function(js) {
+            if(dmtFirstDealAjaxResponse(js))
+                return;
+            if(typeof js.ret == 'undefined' || js.ret != 0) {
+                alertMsg.warn("监控点类型信息获取失败，图表导航功能暂不能使用");
+                return;
+            }
+            $('#dsPluginLeftMenu_<?cs var:plugin.id ?>').css('padding-bottom', '1px');
+            dsPluginSetNaviMenuInfo_<?cs var:plugin.id ?>(js);
+        },
+        dataType: 'json', 
+        global: false
+    });
+}
+
+function dsPluginSetMachines_<?cs var:plugin.id ?>()
+{
+    var jsmachs = <?cs var:plugin.req_machines ?>;
+    if(jsmachs.count <= 0)
+        return false;
+
+    var hisy = window.localStorage.getItem('ds_plugin_<?cs var:plugin.id ?>_sel_mach');
+    var bfind_mach = false;
+    var set_init_mach = '<?cs var:config.init_show_machine ?>';
+    for(var i=0; i < jsmachs.count && i < jsmachs.list.length; i++) {
+        var op = $('<option></option>');
+        if(jsmachs.list[i].name != jsmachs.list[i].ip1)
+            op.val(jsmachs.list[i].id).text(jsmachs.list[i].name+'('+jsmachs.list[i].ip1+')').attr('machine', jsmachs.list[i].ip1);
+        else
+            op.val(jsmachs.list[i].id).text(jsmachs.list[i].name).attr('machine', jsmachs.list[i].ip1);
+        if(set_init_mach != '') {
+            if(set_init_mach == jsmachs.list[i].ip1) {
+                op.attr('selected', true);
+                $('#ds_plugin_show_table_<?cs var:plugin.id ?> a').attr('href',
+                    '<?cs var:config.cgipath ?>mt_slog?action=plugin_show_tables&plugin=<?cs var:plugin.id ?>&machine='
+                    + jsmachs.list[i].ip1);
+                bfind_mach = true;
+            }
+        }
+        else if(jsmachs.list[i].id == hisy) {
+            op.attr('selected', true);
+            $('#ds_plugin_show_table_<?cs var:plugin.id ?> a').attr('href',
+                '<?cs var:config.cgipath ?>mt_slog?action=plugin_show_tables&plugin=<?cs var:plugin.id ?>&machine='
+                + jsmachs.list[i].ip1);
+            bfind_mach = true;
+        }
+        $('#ds_plugin_sel_machine_<?cs var:plugin.id ?>').append(op);
+        ds_plugin_rep_machines_<?cs var:plugin.id ?> += jsmachs.list[i].id + ' ';
+    }
+    if(!bfind_mach) {
+        $('#ds_plugin_sel_machine_<?cs var:plugin.id ?>').val(0);
+        $('#ds_plugin_show_table_<?cs var:plugin.id ?> a').attr('href',
+            '<?cs var:config.cgipath ?>mt_slog?action=plugin_show_tables&plugin=<?cs var:plugin.id ?>&machine='
+            + '0.0.0.0');
+    }
+    return true;
+}
+
+function dsPluginAttrShowDate2_<?cs var:plugin.id ?>(idx)
+{
+	var reqAttr = ds_plugin_attr_list_arry_<?cs var:plugin.id ?>.slice(
+			idx, idx+<?cs var:config.per_count ?>);
+	if(reqAttr.length <= 0) {
+		if(ds_plugin_attr_show_process_<?cs var:plugin.id ?> || $('#my_background').css('display') != 'none') {
+			setTimeout(function() { $("#my_background,#my_progressBar").hide(); }, 1000);
+		}
+		return;
+	}
+
+	var requrl = "<?cs var:config.cgipath?>mt_slog_showview";
+	var reqpara = {};
+	reqpara.show_rep = 1;
+
+	var ck = $("#ds_plugin_not_show_zero_<?cs var:plugin.id ?>").is(":checked");
+	if(ck)
+		reqpara.show_zero = 0;
+    else
+		reqpara.show_zero = 1;
+	reqpara.plugin_id = <?cs var:plugin.id ?>;
+	reqpara.attr_list = reqAttr.toString();
+	reqpara.action = 'show_pluginview_attr_cust';
+	reqpara.last_seq = ds_plugin_attr_show_get_last_seq_<?cs var:plugin.id ?>;;
+	reqpara.type = ds_plugin_attr_show_type_<?cs var:plugin.id ?>;
+    reqpara.rep_machines = $('#ds_plugin_sel_machine_<?cs var:plugin.id ?>').val();
+    if(reqpara.rep_machines == 0)
+        reqpara.rep_machines = ds_plugin_rep_machines_<?cs var:plugin.id ?>;
+	if(ds_plugin_attr_show_get_auto_<?cs var:plugin.id ?> == 'auto')
+		reqpara.global = false;
+	else
+		reqpara.global = true;
+
+	var dt = $("#ds_plugin_date_<?cs var:plugin.id ?>").val();
+	if(dt != "")
+		reqpara.date = dt;
+	else
+		reqpara.date = 'today';
+	reqpara._r = Math.random();
+
+	if(!ds_plugin_attr_show_process_<?cs var:plugin.id ?>){
+		if(new Date().getTime() > ds_plugin_attr_show_reqstart_timestamp_<?cs var:plugin.id ?>+300) {
+			$('#my_progressBar font').text('图表加载中, 请稍等...');
+			$("#my_background,#my_progressBar").show();
+			ds_plugin_attr_show_process_<?cs var:plugin.id ?> = true;
+		}
+	}
+
+	ds_plugin_attr_show_index_cur_<?cs var:plugin.id ?> = idx; 
+	ajaxTodoPost(requrl, reqpara, function(json) {
+		if(dmtFirstDealAjaxResponse(json))
+			return;
+
+		if(json.statusCode == DWZ.statusCode.success ||json.statusCode == DWZ.statusCode.ok)
+		{
+			if(ds_plugin_attr_show_get_last_seq_<?cs var:plugin.id ?> != json.last_req_seq)
+				return;
+
+			dmtShowAttrInfo(json.attr_list, json.attr_val_list, 
+				'#ds_ct_plugin_attr_show_list_<?cs var:plugin.id ?>', 'pluginview');
+
+			// ajax 自动获取
+			if(ds_plugin_attr_show_index_cur_<?cs var:plugin.id ?> + <?cs var:config.per_count ?>
+				< ds_plugin_attr_list_arry_<?cs var:plugin.id ?>.length) 
+			{
+				ds_plugin_attr_show_get_auto_<?cs var:plugin.id ?> = 'auto';
+				dsPluginAttrShowDate2_<?cs var:plugin.id?>(
+					ds_plugin_attr_show_index_cur_<?cs var:plugin.id ?> + <?cs var:config.per_count ?>);
+			}
+			else
+			{
+				// 获取完毕
+				ds_plugin_attr_show_get_auto_<?cs var:plugin.id ?> = null;
+				ds_plugin_attr_show_index_cur_<?cs var:plugin.id ?> = ds_plugin_attr_list_arry_<?cs var:plugin.id ?>.length;
+				if(ds_plugin_navi_menu_ok_<?cs var:plugin.id ?>) 
+                    dmtAddNoDataTextForView(
+                        'dsPluginLeftMenu_<?cs var:plugin.id ?>', 'ds_ct_plugin_attr_show_list_<?cs var:plugin.id ?>');
+                ds_plugin_chart_ok_<?cs var:plugin.id ?> = true;
+				if(ds_plugin_attr_show_process_<?cs var:plugin.id ?> || $('#my_background').css('display') != 'none') {
+					setTimeout(function() { $("#my_background,#my_progressBar").hide(); }, 1000);
+				}
+			}
+		}
+		else if(json.msgid && alertMsg)
+		{
+			var msg = DWZ.msg(json.msgid);
+			alertMsg.warn(msg);
+		}
+		else if(json.msg)
+			alertMsg.warn(json.msg);
+	});
+}
+
+$(document).ready(function(){
+    if(!<?cs var:plugin.has_realtime_table ?>)
+        $('#ds_plugin_show_table_<?cs var:plugin.id ?>').hide();
+
+	var notShowZero = window.localStorage.getItem("local_plugin_ds_plugin_not_show_zero_<?cs var:plugin.id ?>");
+	if(notShowZero === '1')
+	    $("#ds_plugin_not_show_zero_<?cs var:plugin.id ?>").prop('checked', true);
+	else if(notShowZero === '0')
+	    $("#ds_plugin_not_show_zero_<?cs var:plugin.id ?>").prop('checked', false);
+
+	$('#ds_ct_plugin_attr_show_list_<?cs var:plugin.id ?>').html('');
+    dmtGetAttrIdList(ds_plugin_attr_list_<?cs var:plugin.id ?>, ds_plugin_attr_list_arry_<?cs var:plugin.id ?>);
+	var hideLeft = window.localStorage.getItem("dsPluginLeftMenu_<?cs var:plugin.id ?>_hide");
+    if(hideLeft === '1') {
+		$('#dsPluginLeftMenu_<?cs var:plugin.id ?>').hide();
+        $('#navi-show-icon_<?cs var:plugin.id ?>').addClass('icon-double-angle-left');
+	    dmtSetRedrawChartsInfo('<?cs var:plugin.id ?>', 'pluginview', false);
+    }
+    else if(hideLeft === '0') {
+	    dmtSetRedrawChartsInfo('<?cs var:plugin.id ?>', 'pluginview', true);
+        $('#navi-show-icon_<?cs var:plugin.id ?>').addClass('icon-double-angle-right');
+    }
+    else {
+        if(ds_plugin_attr_list_arry_<?cs var:plugin.id ?>.length <= 10) {
+            $('#dsPluginLeftMenu_<?cs var:plugin.id ?>').hide();
+            $('#navi-show-icon_<?cs var:plugin.id ?>').addClass('icon-double-angle-left');
+	        dmtSetRedrawChartsInfo('<?cs var:plugin.id ?>', 'pluginview', false);
+        }
+        else {
+	        dmtSetRedrawChartsInfo('<?cs var:plugin.id ?>', 'pluginview', true);
+            $('#navi-show-icon_<?cs var:plugin.id ?>').addClass('icon-double-angle-right');
+        }
+    }
+
+	dmtSetChartSize();
+    var bHasMach = dsPluginSetMachines_<?cs var:plugin.id ?>();
+    if(bHasMach && ds_plugin_attr_list_arry_<?cs var:plugin.id ?>.length > 0) {
+	    dsPluginAttrShowDate2_<?cs var:plugin.id ?>(0);
+        dsPluginGetAttrTypeInfo_<?cs var:plugin.id ?>();
+    }
+    else {
+        dmtChartContainerEmpty('#ds_ct_plugin_attr_show_list_<?cs var:plugin.id ?>');
+    }
+});
+
+</script>
+

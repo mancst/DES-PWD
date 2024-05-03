@@ -1,0 +1,121 @@
+<script language="javascript" type="text/javascript">
+
+function ddmsGetShowTimeInfo(tx)
+{
+    if(tx == '无')
+        return "<span class='xrk_show_txt_hs'>无</span>";
+    return tx;
+}
+
+
+$(document).ready(function(){
+    var g_machine_plugin_info = <?cs var:config.machine_plugins ?>;
+    if(g_machine_plugin_info.count > 0) {
+        var uhtml = '';
+        var lt = g_machine_plugin_info.list;
+        for(var i=0; i < lt.length; ++i) {
+            uhtml += "<tr>";
+            if(lt[i].rep_status == 3) 
+		        uhtml += "<td title='最近一小时无心跳无数据上报'><span class='xrk_show_txt_hs'>长时间离线</span></td>";
+            else if(lt[i].rep_status == 2)
+		        uhtml += "<td title='最近5分钟有数据上报'><span class='xrk_text_bl'>数据上报中</span></td>";
+            else if(lt[i].rep_status == 1)
+                uhtml += "<td title='可能是未安装agent 或者agent 运行异常'><span class='xrk_show_txt_hs'>无心跳</span></td>";
+            else
+                uhtml += "<td title='最近3分钟无数据上报但有心跳消息'><span class='xrk_text_bl2'>心跳正常</span></td>";
+            uhtml += "<td>" + lt[i].id + "</td>";
+            uhtml += "<td>" + lt[i].show_name + "</td>";
+            uhtml += "<td>" + lt[i].name + "</td>";
+            uhtml += "<td>" + lt[i].plugin_version + "</td>";
+            uhtml += "<td>" + ddmsGetShowTimeInfo(lt[i].start_time) + "</td>";
+            uhtml += "<td>" + ddmsGetShowTimeInfo(lt[i].last_hello_time) + "</td>";
+            uhtml += "<td>" + ddmsGetShowTimeInfo(lt[i].last_attr_time) + "</td>";
+            uhtml += "<td>" + ddmsGetShowTimeInfo(lt[i].last_log_time) + "</td>";
+        }
+        $('#dms_machine_plugin_<?cs var:config.machine_id ?>').html(uhtml);
+    }
+});
+
+</script>
+
+<div class="pageContent statusMachine" layoutH='0'>
+	<div class="pageFormContent">
+        <h3>上报机器基础信息</h3>
+		<table class='list' width='100%'> 
+            <thead>
+                <tr>
+                    <th align='left' valign='top'>上报状态</th>
+                    <th align='left' valign='top'>机器ID</th>
+                    <th align='left' valign='top'>机器名称</th>
+                    <th align='left' valign='top'>机器IP</th>
+                    <th align='left' valign='top'>agent 启动时间</th>
+                    <th align='left' valign='top'>最近心跳上报时间</th>
+                    <th align='left' valign='top'>最近监控点上报时间</th>
+                    <th align='left' valign='top'>最近日志上报时间</th>
+                </tr>
+            </thead>
+            <tbody>
+			    <tr>
+                <?cs if:config.rep_status == 3 ?>
+			        <td title='最近一小时无心跳无数据上报'><span class='xrk_show_txt_hs'>长时间离线</span></td>
+                <?cs elif:config.rep_status == 2 ?>
+			        <td title='最近5分钟有数据上报'><span class='xrk_text_bl'>数据上报中</span></td>
+                <?cs elif:config.rep_status == 1 ?>
+                    <td title='可能是未安装agent 或者agent 运行异常'><span class='xrk_show_txt_hs'>无心跳</span></td>
+                <?cs else ?>
+                    <td title='最近3分钟无数据上报但有心跳消息'><span class='xrk_text_bl2'>心跳正常</span></td>
+                <?cs /if ?>
+				    <td><?cs var:config.machine_id ?></td>
+				    <td><?cs var:config.machine_name ?></td>
+				    <td><?cs var:config.machine_ip ?></td>
+
+                    <?cs if:config.start_time == '无' ?>
+                    <td><span class='xrk_show_txt_hs'>无</span></td>
+                    <?cs else ?>
+                    <td><?cs var:config.start_time ?></td>
+                    <?cs /if ?>
+
+                    <?cs if:config.last_hello == '无' ?>
+                    <td><span class='xrk_show_txt_hs'>无</span></td>
+                    <?cs else ?>
+                    <td><?cs var:config.last_hello ?></td>
+                    <?cs /if ?>
+
+                    <?cs if:config.last_attr == '无' ?>
+                    <td><span class='xrk_show_txt_hs'>无</span></td>
+                    <?cs else ?>
+                    <td><?cs var:config.last_attr ?></td>
+                    <?cs /if ?>
+
+                    <?cs if:config.last_log == '无' ?>
+                    <td><span class='xrk_show_txt_hs'>无</span></td>
+                    <?cs else ?>
+                    <td><?cs var:config.last_log ?></td>
+                    <?cs /if ?>
+			    </tr>
+            </tbody>
+        </table>
+
+        <br />
+        <h3>已部署插件</h3>
+        <table class='list' width='100%'>
+            <thead>
+                <tr>
+                    <th align='left' valign='top'>上报状态</th>
+                    <th align='left' valign='top'>插件ID</th>
+                    <th align='left' valign='top'>插件显示名</th>
+                    <th align='left' valign='top'>插件部署名</th>
+                    <th align='left' valign='top'>插件版本</th>
+                    <th align='left' valign='top'>插件启动时间</th>
+                    <th align='left' valign='top'>最近心跳时间</th>
+                    <th align='left' valign='top'>最近监控点上报</th>
+                    <th align='left' valign='top'>最近日志上报</th>
+                </tr>
+            </thead>
+            <tbody id='dms_machine_plugin_<?cs var:config.machine_id ?>'>
+            </tbody>
+	    </table>
+	</div>
+</div>
+
+

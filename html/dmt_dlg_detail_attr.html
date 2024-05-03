@@ -1,0 +1,82 @@
+<script language="javascript" type="text/javascript">
+
+/*  引用了 dmt_attr.html 中的变量： da_detail_sel_attr_idx, da_attrinfo 
+   */
+
+$(document).ready(function(){
+	var ulist = da_attrinfo.list;
+	$("#ddda_attr_id").html(ulist[da_detail_sel_attr_idx].id);
+	$("#ddda_attr_name").html(ulist[da_detail_sel_attr_idx].name);
+
+	$("#ddda_attr_type").html(ulist[da_detail_sel_attr_idx].attr_type);
+	$("#ddda_attr_type_id").html(ulist[da_detail_sel_attr_idx].attr_type_id);
+
+	$("#ddda_attr_statictime").html(dmtShowHumanStaticTime(ulist[da_detail_sel_attr_idx].static_time));
+	$("#ddda_attr_data_type").text(daGetAttrDataTypeStr(ulist[da_detail_sel_attr_idx].data_type));
+
+	$("#ddda_attr_val_type").html(daGetAttrValTypeStr(ulist[da_detail_sel_attr_idx].value_type));
+	$("#ddda_attr_chart_type").text(daGetAttrChartTypeStr(ulist[da_detail_sel_attr_idx].chart_type));
+
+	$("#ddda_attr_user_add").html(ulist[da_detail_sel_attr_idx].user_add);
+	$("#ddda_attr_add_time").html(ulist[da_detail_sel_attr_idx].add_time);
+	$("#ddda_attr_user_mod").html(ulist[da_detail_sel_attr_idx].user_mod_id);
+	$("#ddda_attr_mod_time").html(ulist[da_detail_sel_attr_idx].update_time);
+	$("#ddda_attr_desc").html(ulist[da_detail_sel_attr_idx].attr_desc);
+});
+
+</script>
+
+<div class="pageContent"> 
+	<div class="pageFormContent">
+		<table> 
+			<tr height="22">
+				<td width="120" align="right">监控点名称：</td>
+				<td width="200" id="ddda_attr_name"></td>
+				<td width="120" align="right">监控点 id：</td>
+				<td width="200" id="ddda_attr_id"></td>
+			</tr>
+
+			<tr height="22">
+				<td width="120" align="right">监控点类型：</td>
+				<td width="200" id="ddda_attr_type"></td>
+				<td width="120" align="right">监控点类型ID：</td>
+				<td width="200" id="ddda_attr_type_id"></td>
+			</tr>
+
+			<tr height="22">
+				<td width="120" align="right">统计周期：</td>
+				<td width="200" id="ddda_attr_statictime"></td>
+				<td width="120" align="right">数据类型：</td>
+				<td width="200" id="ddda_attr_data_type"></td>
+			</tr>
+
+			<tr height="22">
+				<td width="120" align="right">监控点值类型：</td>
+				<td width="200" id="ddda_attr_val_type"></td>
+				<td width="120" align="right">绘制图表类型：</td>
+				<td width="200" id="ddda_attr_chart_type"></td>
+			</tr>
+
+			<tr height="22">
+				<td width="120" align="right">添加人：</td>
+				<td width="200" id="ddda_attr_user_add"></td>
+				<td width="120" align="right">添加时间：</td>
+				<td width="200" id="ddda_attr_add_time"></td>
+			</tr>
+
+			<tr height="22">
+				<td width="120" align="right">最近更新人ID：</td>
+				<td width="200" id="ddda_attr_user_mod"></td>
+				<td width="140" align="right">最近更新时间：</td>
+				<td width="200" id="ddda_attr_mod_time"></td>
+			</tr>
+
+			<tr height="30">
+				<td width="120" align="right" valign="top">监控点描述：</td>
+				<td width="200" colspan='3' height="80" valign="top" id="ddda_attr_desc"></td>
+			</tr>
+		</table>
+	</div>
+</div>
+
+

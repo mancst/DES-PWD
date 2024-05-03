@@ -1,0 +1,78 @@
+<div id='dct_dlg_show_daemon_tip_msg' style='display:none'>
+    <div align='left' style='margin-left:20px' layoutH="32">
+        <br />
+		<br />
+		<font style='font-size:16px;'>尊敬的用户您好：</font>
+		<br />
+		<br />
+		<font color='red' style='font-size:16px;margin-left:10px'>此为演示版本，您的操作已被禁止</font>
+		<br />
+		<br />
+    </div>
+    <div class="formBar">
+        <ul>
+			<li><button type="button" class="buttonActive close">关闭</button></li>
+        </ul>
+    </div>
+</div>
+
+<div id="leftside">
+	<div id="sidebar_s"><i class="icon-reorder icon-large"></i></div>
+	<div id="sidebar">
+		<div id="menu">
+			<?cs include:config.cspath+"dwz_left_attr.html" ?>
+		</div>
+	</div>
+</div>
+
+<div id="navTab" class="tabsPage">
+	<div class="tabsPageHeader">
+		<div class="tabsPageHeaderContent">
+			<ul class="navTab-tab">
+				<li tabid="main" class="main"><a href="javascript:;"><i class="icon-home icon-large"></i> 主页</a></li>
+			</ul>
+		</div>
+		<a href="javascript:;" class="toggleCollapse"><i class="icon icon-chevron-sign-left icon-large"></i></a>
+		<a href="javascript:;" class="tabsLeft"><i class="icon-backward icon-large"></i></a>
+		<a href="javascript:;" class="tabsRight"><i class="icon-forward icon-large"></i></a>
+		<a href="javascript:;" class="tabsMore"><i class="icon-th-list icon-large"></i></a>
+	</div>
+	<ul class="tabsMoreList">
+	    <li><a href="javascript:;"><i class="icon-home icon-large"></i> 主页</a></li>
+	</ul>
+	<div class="navTab-panel tabsPageContent layoutBox">
+		<div class="page unitBox">
+		<?cs include:config.cspath+"dmt_master_page.html" ?>
+		</div>
+	</div>
+</div>
+
+<!-- 图表概要信息 -->
+<div id='dc_dlg_detail_chart_info' style='display:none'>
+	<div class="pageFormContent" align='center' defH="100">
+        <p>
+            <label>图表所属对象:</label>
+            <span class='dlg_chart_info_obj'></span>
+        </p>
+        <p>
+            <label>监控点:</label>
+            <span class='dlg_chart_info_attr'></span>
+        </p>
+	    <p>
+            <label>上报数据概况:</label>
+            <span class='dlg_chart_info_attr_data_info'></span>
+        </p>
+	    <p>
+            <label>提示配置:</label>
+            <span class='dlg_chart_info_attr_warn_info'></span>
+        </p>
+	    <p>
+            <label>最新统计周期:</label>
+            <span class='dlg_chart_info_attr_last_static_info'></span>
+        </p>
+        <p>
+            <span class='dlg_chart_info_extra'></span>
+        </p>
+	</div>
+</div>
+

@@ -1,0 +1,310 @@
+<div class="pageHeader">
+	<form class="pagerForm" method="post" onsubmit="return navTabSearch(this);" action="<?cs var:config.cgipath?>mt_slog_warn?action=search">
+		<?cs include:config.cspath+"dmt_page_para.html" ?>
+		<input type="hidden" name="dwc_warn_obj_type" value="<?cs var:config.dwc_warn_obj_type ?>" />
+		<input type="hidden" name="dwc_warn_type" value="<?cs var:config.dwc_warn_type ?>" />
+		<input type="hidden" name="dwc_warn_status" value="<?cs var:config.dwc_warn_status ?>" />
+		<input type="hidden" name="dwc_obj_id" value="<?cs var:config.dwc_obj_id ?>" />
+	</form>
+
+	<form onsubmit="return navTabSearch(this, 'dmt_slog_warn');" action="<?cs var:config.cgipath ?>mt_slog_warn?action=search" method="post">
+		<div class="searchBar">
+			<ul class="searchContent" >
+				<li>
+					<label>提示对象:</label>
+					<select class='xrk_combox' name="dwc_warn_obj_type" id="dwc_warn_obj_type">
+						<option value="0">全部</option>
+						<option value="1">单机提示</option>
+						<option value="2">视图提示</option>
+					</select>
+				</li>
+				<li>
+					<label>提示类型:</label>
+					<select class='xrk_combox' name="dwc_warn_type" id="dwc_warn_type">
+						<option value="0">全部</option>
+						<option value="1">最大值</option>
+						<option value="2">最小值</option>
+						<option value="4">波动值</option>
+					</select>
+				</li>
+				<li>
+					<label>提示状态:</label>
+					<select class='xrk_combox' name="dwc_warn_status" id="dwc_warn_status">
+						<option value="0">全部</option>
+						<option value="32">已屏蔽</option>
+						<option value="64">未屏蔽</option>
+					</select>
+				</li>
+				<li>
+					<label>提示对象 id:</label><input type="text" name="dwc_obj_id" size="10" value="<?cs var:config.dwc_obj_id ?>" />
+				</li>
+			</ul>
+			<div class="subBar">
+				<ul>
+					<li class="width:auto"><button type="submit" class="buttonActive"><i class='icon-search icon-large '></i>查找</button></li>
+					<li><button class="buttonActive" onclick="return dwcClearSearch()"><i class="icon-trash icon-large"></i>重填</button></li>
+				</ul>
+			</div>
+		</div>
+	</form>
+</div>
+		
+<div class="pageContent">
+	<div class="panelBar">
+		<ul class="toolBar">
+			<li><a href="#" onclick="return dwcModMultiWarn();"><i class='icon-edit'></i>批量修改提示</a></li>
+			<li class="line">line</li>
+			<li><a href="#" onclick="return dwcMaskMultiWarn();"><i class='icon-ban-circle'></i>批量屏蔽提示</a></li>
+			<li class="line">line</li>
+			<li><a href="#" onclick="return dwcUmaskMultiWarn();"><i class='icon-random'></i>批量解除屏蔽</a></li>
+			<li class="line">line</li>
+			<li><a href="#" onclick="return dwcDelMultiWarn();"><i class='icon-minus'></i>批量删除提示</a></li>
+			<li class="line">line</li>
+			<li><a href="#" onclick="return dwcAddNewWarn(1);"><i class="icon-desktop"></i>单机提示设置</a></li>
+			<li class="line">line</li>
+			<li><a href="#" onclick="return dwcAddNewWarn(2);"><i class="icon-coffee"></i>视图提示设置</a></li>
+			<li class="line">line</li>
+		</ul>
+	</div>
+	<table class="list" width="100%" layoutH="0">
+		<thead>
+			<tr>
+				<th width="22" align='left'><input type="checkbox" group="warn_ids" class="checkboxCtrl"></th>
+				<?cs if:config.order_attr_id ?>
+				<th width="40" orderField="attr_id" class="<?cs var:config.order_attr_id ?>">监控点id</th>
+				<?cs else ?>
+				<th width="40" orderField="attr_id" class="asc">监控点id</th>
+				<?cs /if ?>
+
+				<th width="150">监控点名称</th>
+				<th width="60">提示对象</th>
+
+				<?cs if:config.order_warn_type_value ?>
+				<th width="40" orderField="warn_type_value" class="<?cs var:config.order_warn__obj_type_value ?>">对象值</th>
+				<?cs else ?>
+				<th width="40" orderField="warn_type_value" class="asc">对象值</th>
+				<?cs /if ?>
+				<th width="110">提示类型</th>
+				<th width="60">提示值</th>
+				<th width="90">屏蔽状态</th>
+				<?cs if:config.order_create_time ?>
+				<th width="120" orderField="create_time" class="<?cs var:config.order_create_time ?>">添加时间</th>
+				<?cs else ?>
+				<th width="120" orderField="create_time" class="desc">添加时间</th>
+				<?cs /if ?>
+			</tr>
+		</thead>
+		<tbody id="dwc_warn_list_info">
+		</tbody>
+	</table>
+	<?cs include:config.cspath+"dmt_page.html" ?>
+</div>
+
+<script language="javascript" type="text/javascript">
+var dwc_warn_config = $.parseJSON('<?cs var:config.warn_config_info ?>');
+
+function dwcSetWarnList(warninfo)
+{
+	var list = "";
+	var listwarn = warninfo.list;
+	var bhas = false;
+	var warn_type = "<?cs var:config.dwc_warn_type ?>";
+	for(var i=0,j=0; i < warninfo.count && i < listwarn.length; i++)
+	{
+		list += "<tr>";
+		list += "<td><input name='warn_ids' value=";
+		list +=  listwarn[i].config_id + " type='checkbox'></td>";
+		list += "<td>" + listwarn[i].attr_id + "</td>";
+		list += "<td>" + listwarn[i].attr_name + "</td>";
+		if(listwarn[i].warn_flag & 8)
+			list += "<td>单机</td>";
+		else if(listwarn[i].warn_flag & 16)
+			list += "<td>视图</td>";
+		else
+			list += "<td>未知</td>";
+		list += "<td>" + listwarn[i].warn_obj_value + "</td>";
+
+		list += "<td>";
+		bhas = false;
+		if(warn_type == "1" || (warn_type=="" && listwarn[i].warn_flag & 1)) {
+			list += "最大值";
+			bhas = true;
+		}
+		if(warn_type == "2" || (warn_type=="" && listwarn[i].warn_flag & 2)) {
+			if(bhas) list += " | 最小值";
+			else list += "最小值";
+			bhas = true;
+		}
+		if(warn_type == "4" || (warn_type=="" && listwarn[i].warn_flag & 4)) {
+			if(bhas) list += " | 波动值";
+			else list += "波动值";
+		}
+		list += "</td>";
+
+		list += "<td><span class='xrk_text_bl'>";
+		bhas = false;
+		if(warn_type == "1" || (warn_type=="" && listwarn[i].warn_flag & 1)) {
+			list += listwarn[i].warn_max;
+			bhas = true;
+		}
+		if(warn_type == "2" || (warn_type=="" && listwarn[i].warn_flag & 2)) {
+			if(bhas) { list += " | "; list += listwarn[i].warn_min; }
+			else { list += listwarn[i].warn_min; }
+			bhas = true;
+		}
+		if(warn_type == "4" || (warn_type=="" && listwarn[i].warn_flag & 4)) {
+			if(bhas) { list += " | "; list += listwarn[i].warn_wave; }
+			else list += listwarn[i].warn_wave;
+		}
+		list += "</span></td>";
+
+		if(listwarn[i].warn_flag & 32)
+			list += "<td><span class='xrk_show_txt_hs'>已屏蔽</span></td>";
+		else
+			list += "<td><span class='xrk_text_bl2'>未屏蔽</span></td>";
+		list += "<td>" + listwarn[i].add_time + "</td>";
+		list += "</tr>";
+	}
+	return list;
+}
+
+function dwcClearSearch()
+{
+	$("#dwc_warn_type").val(0);
+	$("#dwc_warn_obj_type").val(0);
+	$("#dwc_warn_status").val(0);
+	$("input[name=dwc_view_id]").val("");
+	$("input[name=dwc_machine_id]").val("");
+	$("input[name=dwc_obj_id]").val("");
+	return false;
+}
+
+function dwcDelMultiWarn()
+{
+	var sel_config = "";
+	$("#dwc_warn_list_info").find("input:checked").filter("[name='warn_ids']").each(function(i){
+		var val = $(this).val();
+		sel_config += (i==0 ? val : ","+val);
+	});
+
+	if(sel_config == "")
+	{
+		alertMsg.info("请选择要删除的提示");
+		return;
+	}
+
+	alertMsg.confirm("确定要删除吗？", {
+		okCall: function(){
+			var url = "<?cs var:config.cgipath?>mt_slog_warn?action=del_multi_warn";
+			url += "&warn_list=" + sel_config;
+			ajaxTodo(url);
+		}
+	});
+	return false;
+}
+
+function dwcUmaskMultiWarn()
+{
+	var sel_config = "";
+	$("#dwc_warn_list_info").find("input:checked").filter("[name='warn_ids']").each(function(i){
+		var val = $(this).val();
+		sel_config += (i==0 ? val : ","+val);
+	});
+
+	if(sel_config == "")
+	{
+		alertMsg.info("请选择要解除屏蔽的提示");
+		return;
+	}
+
+	var url = "<?cs var:config.cgipath?>mt_slog_warn?action=multi_umask_warn";
+	url += "&ddwc_mod_warn_list=" + sel_config;
+	url += "&c_warn_not_mask_sel=umask";
+	ajaxTodo(url);
+}
+
+function dwcMaskMultiWarn()
+{
+	var sel_config = "";
+	$("#dwc_warn_list_info").find("input:checked").filter("[name='warn_ids']").each(function(i){
+		var val = $(this).val();
+		sel_config += (i==0 ? val : ","+val);
+	});
+
+	if(sel_config == "")
+	{
+		alertMsg.info("请选择要屏蔽的提示");
+		return;
+	}
+
+	var url = "<?cs var:config.cgipath?>mt_slog_warn?action=multi_mask_warn";
+	url += "&ddwc_mod_warn_list=" + sel_config;
+	url += "&c_warn_mask_sel=mask";
+	ajaxTodo(url);
+}
+
+function dwcModMultiWarn()
+{
+	var sel_config = "";
+	$("#dwc_warn_list_info").find("input:checked").filter("[name='warn_ids']").each(function(i){
+		var val = $(this).val();
+		sel_config += (i==0 ? val : ","+val);
+	});
+
+	if(sel_config == "")
+	{
+		alertMsg.info("请选择要修改的提示");
+		return;
+	}
+
+	var url = "<?cs var:config.cgipath?>mt_slog_warn?action=mod_multi_warn";
+	url += "&warn_list=" + sel_config;
+	var op = $.parseJSON('{"mask":true,"maxable":false,"height":260,"width":560}'); 
+	$.pdialog.open(url, "dwc_dlg_mod_multi_warn", "批量修改提示配置", op); 
+}
+
+function dwcAddNewWarn(type)
+{
+	var url = "<?cs var:config.cgipath?>mt_slog_warn?action=add_warn&type="+type;
+	var op = $.parseJSON('{"mask":true,"maxable":false,"height":300,"width":560}'); 
+	if(type == "1")
+		$.pdialog.open(url, "dwc_dlg_add_new_mach_warn", "添加单机最值提示", op); 
+	else
+		$.pdialog.open(url, "dwc_dlg_add_new_view_warn", "添加视图最值提示", op); 
+}
+
+$(document).ready(function(){
+	var warn_info = dwcSetWarnList(dwc_warn_config);
+	var warn = $("#dwc_warn_list_info");
+	warn.html(warn_info);
+
+	$("select[name=dwc_warn_obj_type] option").each(function(){
+		<?cs if:config.dwc_warn_obj_type ?>
+			if(this.value == <?cs var:config.dwc_warn_obj_type ?>)
+				$(this).attr("selected", true);
+		<?cs /if ?>
+	});
+
+	$("select[name=dwc_warn_type] option").each(function(){
+		<?cs if:config.dwc_warn_type ?>
+			if(this.value == <?cs var:config.dwc_warn_type ?>)
+				$(this).attr("selected", true);
+		<?cs /if ?>
+	});
+
+	$("select[name=dwc_warn_status] option").each(function(){
+		<?cs if:config.dwc_warn_status?>
+			if(this.value == <?cs var:config.dwc_warn_status?>)
+				$(this).attr("selected", true);
+		<?cs /if ?>
+	});
+
+
+	$("select[name=numPerPage] option").each(function(){
+		if(this.value == <?cs var:config.numPerPage ?>)
+			$(this).attr("selected", true);
+	});
+});
+
+</script>
+

@@ -1,0 +1,8 @@
+VER_MAJOR = 1
+VER_MINOR = 1.0
+INSTALL_INC = *.h
+SRCS = ./user.pb.cc ./comm.pb.cc ./top_proto.pb.cc ./memcache.pb.cc
+
+INCLS = ./user.pb.h ./comm.pb.h ./top_proto.pb.h ./memcache.pb.h
+
+INCLUDE =

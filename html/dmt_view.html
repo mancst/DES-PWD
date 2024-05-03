@@ -1,0 +1,130 @@
+<script language="javascript" type="text/javascript">
+var dv_view_info = $.parseJSON('<?cs var:config.view_info ?>');
+
+function dmSetViewList(view_info)
+{
+	var list = "";
+	if(view_info.count <= 0)
+		return list;
+
+	var list_view = view_info.list;
+	for(var i=0,j=0; i < view_info.count && i < list_view.length; i++)
+	{
+		list += "<tr target='view_id' rel='" + list_view[i].id + "'>";
+		list += "<td>" + list_view[i].id + "</td>";
+		list += "<td>" + list_view[i].name + "</td>";
+
+		if(list_view[i].view_flag & 1)
+            list += "<td><span class='xrk_text_bl2'>已开启自动绑定</span></td>";
+		else
+			list += "<td></td>";
+
+		list += "<td>" + list_view[i].view_desc + "</td>";
+		list += "<td>" + list_view[i].user_add + "</td>";
+		list += "<td>" + list_view[i].add_time + "</td>";
+		list += "</tr>";
+	}
+	return list;
+}
+
+$(document).ready(function(){
+	var view_info = dmSetViewList(dv_view_info);
+	var view = $("#dv_view_info_list");
+	view.html(view_info);
+
+	$("select[name=numPerPage] option").each(function(){
+		if(this.value == <?cs var:config.numPerPage ?>)
+			$(this).attr("selected", true);
+	});
+
+	$("#dv_btn_erase").click(function(){
+		$("input[name=dv_keyword]").val("");
+		$("input[name=dv_view_id]").val("");
+		return false;
+	});
+});
+
+</script>
+
+<div class="pageHeader">
+	<form class="pagerForm" method="post" onsubmit="return navTabSearch(this);" action="<?cs var:config.cgipath?>mt_slog_view?action=search">
+		<?cs include:config.cspath+"dmt_page_para.html" ?>
+		<input type="hidden" name="dv_keyword" value="<?cs var:config.dv_keyword ?>" />
+		<input type="hidden" name="dv_view_id" value="<?cs var:config.dv_view_id ?>" />
+	</form>
+
+	<form onsubmit="return navTabSearch(this, 'dmt_slog_view');" action="<?cs var:config.cgipath?>mt_slog_view?action=search">
+		<div class="searchBar">
+			<ul class="searchContent" >
+				<li>
+					<label>视图ID:</label><input type="text" name="dv_view_id" size="10" value="<?cs var:config.dv_view_id ?>" />
+				</li>
+				<li>
+					<label>关键字:</label><input type="text" name="dv_keyword" size="20" value="<?cs var:config.dv_keyword ?>" />
+				</li>
+			</ul>
+			<div class="subBar">
+				<ul>
+					<li><button type="submit" class="buttonActive"><i class="icon-search icon-large"></i>查找</button></li>
+					<li><button type="button" id="dv_btn_erase" class='buttonActive'><i class="icon-trash icon-large"></i>重填</button></li>
+				</ul>
+			</div>
+		</div>
+	</form>
+</div>
+		
+<div class="pageContent">
+	<div class="panelBar">
+		<ul class="toolBar">
+			<li><a href="<?cs var:config.cgipath?>mt_slog_view?action=add&navTabId=dvt_view" target="dialog" mask="true" maxable="false" width="560" height="300" title="添加视图"><i class='icon-plus'></i>添加</a></li>
+			<li class="line">line</li>
+			<li><a href="<?cs var:config.cgipath?>mt_slog_view?action=delete&id={view_id}&navTabId=dvt_view" target="ajaxTodo" title="确定要删除吗?"><i class='icon-plus'></i>删除</a></li>
+			<li class="line">line</li>
+			<li><a href="<?cs var:config.cgipath?>mt_slog_view?action=mod&id={view_id}&navTabId=dvt_view" target="dialog" mask="true" maxable="false" resizable="false" width="560" height="300" title="修改视图配置"><i class='icon-edit'></i>修改</a></li>
+			<li class="line">line</li>
+		</ul>
+	</div>
+
+	<table class="list" width="100%" layoutH="0">
+		<thead>
+			<tr>
+				<?cs if:config.order_xrk_id ?>
+				<th width="70" orderField="xrk_id" class="<?cs var:config.order_xrk_id ?>">视图id</th>
+				<?cs else ?>
+				<th width="70" orderField="xrk_id" class="asc">视图id</th>
+				<?cs /if ?>
+
+				<?cs if:config.order_xrk_name ?>
+				<th width="120" orderField="xrk_name" class="<?cs var:config.order_xrk_name ?>">视图名称</th>
+				<?cs else ?>
+				<th width="120" orderField="xrk_name" class="asc">视图名称</th>
+				<?cs /if ?>
+
+				<?cs if:config.order_view_flag ?>
+				<th width="120" orderField="view_flag" class="<?cs var:config.order_view_flag ?>">
+					绑定机器
+				</th>
+				<?cs else ?>
+				<th width="120" orderField="view_flag" class="desc">绑定机器</th>
+				<?cs /if ?>
+				<th width="140">视图描述</th>
+
+				<?cs if:config.order_user_add ?>
+				<th width="100" orderField="user_add" class="<?cs var:config.order_user_add ?>">添加者</th>
+				<?cs else ?>
+				<th width="100" orderField="user_add" class="asc">添加者</th>
+				<?cs /if ?>
+
+				<?cs if:config.order_create_time ?>
+				<th width="140" orderField="create_time" class="<?cs var:config.order_create_time ?>">添加时间</th>
+				<?cs else ?>
+				<th width="140" orderField="create_time" class="desc">添加时间</th>
+				<?cs /if ?>
+			</tr>
+		</thead>
+		<tbody id="dv_view_info_list">
+		</tbody>
+	</table>
+	<?cs include:config.cspath+"dmt_page.html" ?>
+</div>
+
